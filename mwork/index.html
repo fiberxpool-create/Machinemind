@@ -1543,7 +1543,7 @@ function paintProfileState(){
   if (enrolled && dirty){
     pb.innerHTML = banner("warn","Unsaved changes","Save, then press Update enrolment so recruiters see the new version.");
   } else if (!verified){
-    pb.innerHTML = banner("bad","Verify your email","We sent a link to " + esc(me.email) + ". Confirm it to unlock enrolment, resume upload and job posting.");
+    pb.innerHTML = banner("bad","Verify your email","We sent a link to " + esc(me.email) + " — check spam/junk if it's not in your inbox. Confirm it to unlock enrolment, resume upload and job posting.");
   } else if (!complete){
     pb.innerHTML = banner("warn","Profile incomplete","Still needed: " + esc(miss.join(", ")) + ".");
   } else if (!enrolled){
@@ -1619,7 +1619,7 @@ $("formUp").onsubmit = async e => {
     const cred = await createUserWithEmailAndPassword(auth, $("upMail").value.trim(), $("upPass").value);
     try { await sendEmailVerification(cred.user); } catch(_){}
     box.className = "form-msg good";
-    box.textContent = "Account created. Check your inbox for the verification link.";
+    box.textContent = "Account created. Check your inbox for the verification link — and your spam/junk folder, it often lands there.";
   } catch(err){ box.textContent = authErr(err); }
 };
 $("formHr").onsubmit = async e => {
@@ -1630,7 +1630,7 @@ $("formHr").onsubmit = async e => {
     try { await sendEmailVerification(cred.user); } catch(_){}
     sessionStorage.setItem("mw_open_hr", "1");
     box.className = "form-msg good";
-    box.textContent = "Account created. Verify your email, then complete the recruiter form.";
+    box.textContent = "Account created. Check your inbox (and spam folder) for the verification link, then complete the recruiter form.";
   } catch(err){ box.textContent = authErr(err); }
 };
 
