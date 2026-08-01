@@ -589,6 +589,7 @@
           <div class="fld"><label for="inPass">Password</label>
             <input class="inp" id="inPass" type="password" required autocomplete="current-password" placeholder="••••••••" /></div>
           <button class="btn btn-full" type="submit">Log in</button>
+          <button class="btn-quiet btn-full" id="forgotPass" type="button" style="margin-top:9px">Forgot password?</button>
           <div class="form-msg" id="msgIn"></div>
         </form>
 
@@ -1000,7 +1001,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
          onAuthStateChanged, signOut, sendEmailVerification, reload, setPersistence,
-         browserSessionPersistence }
+         browserSessionPersistence, sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, addDoc,
          onSnapshot, serverTimestamp, updateDoc }
@@ -1612,6 +1613,16 @@ $("formIn").onsubmit = async e => {
   try { await signInWithEmailAndPassword(auth, $("inMail").value.trim(), $("inPass").value); }
   catch(err){ $("msgIn").textContent = authErr(err); }
 };
+$("forgotPass").onclick = async () => {
+  const box = $("msgIn"); box.className = "form-msg";
+  const mail = $("inMail").value.trim();
+  if (!mail) { box.textContent = "Type your email above first, then press Forgot password?"; return; }
+  try {
+    await sendPasswordResetEmail(auth, mail);
+    box.className = "form-msg good";
+    box.textContent = "Reset link sent to " + mail + " — check spam/junk if you don't see it.";
+  } catch(err){ box.textContent = authErr(err); }
+};
 $("formUp").onsubmit = async e => {
   e.preventDefault();
   const box = $("msgUp"); box.className = "form-msg"; box.textContent = "";
@@ -1832,8 +1843,9 @@ function ensurePrivateSub(){
 $("formProfile").onsubmit = async e => {
   e.preventDefault();
   if (!me) return;
-  const miss = missingFields();
-  if (miss.length) return toast("Still needed: " + miss.join(", "), true);
+  // Save always works with whatever's filled in — completeness is only required to
+  // press Enrol (checked separately, further down). This is what lets someone save
+  // partial progress instead of being blocked until every mandatory field is done.
   const bad = eduRows.find(r => (r.degree === "PGDM" || r.degree === "Other") && !String(r.specialisation||"").trim());
   if (bad) return toast("Add the specialisation for your " + bad.degree + " entry.", true);
   const badX = expRows.find(r => r.company === "Other" && !String(r.companyOther||"").trim());
@@ -1881,7 +1893,10 @@ $("formProfile").onsubmit = async e => {
     $("pSaved").textContent = "Saved";
     setTimeout(() => $("pSaved").textContent = "", 2600);
     paintProfileState(); paintRole();
-    toast(myCand.isEnrolled ? "Saved. Press Update enrolment to publish." : "Saved. You can enrol now.");
+    const msg = myCand.isEnrolled ? "Saved. Press Update enrolment to publish."
+      : profileComplete() ? "Saved. You can enrol now."
+      : "Saved. Still need: " + missingFields().join(", ") + " before you can enrol.";
+    toast(msg);
   } catch(err){ toast("Couldn't save: " + (err?.message || ""), true); }
 };
 
