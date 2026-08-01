@@ -1,0 +1,3084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAB KYC — Production CRM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+<style>
+:root{
+  --bg:#070B14; --bg2:#0B1120; --panel:rgba(255,255,255,.045); --panel2:rgba(255,255,255,.08);
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+  --ink:#E8ECF4; --dim:#8B96AB; --faint:#5A6478;
+  --red:#FF3B4E; --nab:#E30613; --amber:#FFB020; --green:#2FD57C; --cyan:#3ED2E8; --violet:#8B7BFF;
+  --glow-red:0 0 22px rgba(255,59,78,.45); --glow-amber:0 0 22px rgba(255,176,32,.4); --glow-green:0 0 22px rgba(47,213,124,.4);
+  --r:16px; --glass-blur:18px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0;background:
+    radial-gradient(900px 500px at 12% 8%, rgba(227,6,19,.08), transparent 60%),
+    radial-gradient(1200px 700px at 82% 0%, rgba(62,140,232,.10), transparent 55%),
+    radial-gradient(1000px 900px at 50% 100%, rgba(139,123,255,.07), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  min-height:100vh;color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;font-weight:500;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility}
+body{padding-bottom:60px}
+h1,h2,h3,h4,h5,strong,b{color:#fff}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+button{cursor:pointer;font-family:'Inter',sans-serif}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+a{color:var(--cyan)}
+
+/* ============ scroll reveal ============ */
+.reveal{opacity:0;transform:translateY(28px) scale(.985);transition:opacity .7s cubic-bezier(.16,.8,.3,1), transform .7s cubic-bezier(.16,.8,.3,1)}
+.reveal.in{opacity:1;transform:translateY(0) scale(1)}
+.reveal-stagger.in{transition-delay:calc(var(--i,0) * 70ms)}
+
+/* ============ topbar ============ */
+.topbar{position:relative;background:#000;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.08);
+  position:sticky;top:0;z-index:40;transition:padding .3s ease}
+#bgfx{display:none}
+.topbar-inner{position:relative;display:flex;align-items:center;gap:18px;z-index:2;padding-left:78px}
+.topbar-inner .logo{flex:none}
+.topbar-inner .gsearch{flex:1;max-width:420px;margin:0 auto}
+.topbar-inner .top-actions{flex:none;margin-left:auto}
+@media (max-width:860px){.topbar-inner{flex-wrap:wrap}.topbar-inner .gsearch{order:3;flex-basis:100%;max-width:none;margin:6px 0 0}}
+.fadeable{transition:opacity .3s ease, transform .3s ease, visibility .3s ease}
+body.scrolled .fadeable{opacity:0;transform:translateY(-6px);visibility:hidden;pointer-events:none}
+body.scrolled .topbar{padding-top:10px;padding-bottom:10px}
+.logo{display:flex;align-items:center;gap:12px}
+.nab-badge{display:flex;align-items:center;gap:9px}
+.nab-star-emblem{display:flex;align-items:center;justify-content:center}
+.nab-word{font-family:'Sora',sans-serif;font-weight:800;font-size:24px;letter-spacing:-.01em;color:#fff;line-height:1}
+.nab-divider{width:1px;height:30px;background:rgba(255,255,255,.35);margin:0 2px}
+.nab-tagline{font-family:'Inter',sans-serif;font-weight:700;font-size:11px;line-height:1.2;letter-spacing:.01em;color:#fff;text-transform:lowercase}
+.logo .sub{display:none}
+.top-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.top-actions .btn{background:#E30613;box-shadow:none;border-radius:6px;padding:10px 22px;font-weight:700}
+.top-actions .btn:hover{background:#C40010;transform:none}
+.top-actions .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px}
+.top-actions .btn-ghost:hover{border-color:#fff}
+.saved-pill{border-color:rgba(255,255,255,.25);background:transparent}
+
+/* ============ hamburger + side panel ============ */
+.hamburger{position:absolute;left:20px;top:50%;transform:translateY(-50%);z-index:3;width:26px;height:20px;background:transparent;border:none;
+  display:flex;flex-direction:column;justify-content:space-between;padding:2px 0}
+.hamburger span{display:block;height:2.5px;border-radius:1px;background:#fff;width:100%;transition:transform .3s ease, opacity .3s ease, width .3s ease}
+.hamburger:hover span{background:var(--cyan)}
+.back-btn{position:absolute;left:56px;top:50%;transform:translateY(-50%);z-index:3;width:30px;height:30px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:50%;color:#fff;
+  display:flex;align-items:center;justify-content:center;transition:.2s cubic-bezier(.2,.8,.2,1)}
+.back-btn:hover{background:rgba(62,210,232,.15);border-color:var(--cyan);color:var(--cyan);transform:translateY(-50%) translateX(-2px)}
+.back-btn svg{display:block}
+.side-overlay{position:fixed;inset:0;background:rgba(3,6,12,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  z-index:150;display:none;opacity:0;transition:opacity .3s ease;pointer-events:none}
+.side-overlay.open{display:block;opacity:1;pointer-events:auto}
+.side-overlay.hover-open{display:block;opacity:1;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
+.side-overlay.hover-open .side-panel{pointer-events:auto}
+.side-panel{position:fixed;left:0;top:0;bottom:0;width:280px;max-width:82vw;
+  background:linear-gradient(175deg, rgba(18,26,48,.97), rgba(6,9,17,.99));
+  border-right:1px solid var(--line2);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);
+  box-shadow:24px 0 60px rgba(0,0,0,.5);transform:translateX(-100%);transition:transform .38s cubic-bezier(.16,.9,.3,1.05);
+  display:flex;flex-direction:column;padding:18px 14px;pointer-events:none}
+.side-overlay.open .side-panel, .side-overlay.hover-open .side-panel{transform:translateX(0);pointer-events:auto}
+.sp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding:0 4px}
+.sp-links{display:flex;flex-direction:column;gap:4px;flex:1}
+.sp-links button{text-align:left;padding:11px 14px;border-radius:10px;border:1px solid transparent;background:transparent;
+  color:var(--dim);font-size:13.5px;font-weight:600;transition:.18s}
+.sp-links button:hover{background:var(--panel2);color:var(--ink);transform:translateX(3px)}
+.sp-links button.active{background:rgba(227,6,19,.14);border-color:rgba(227,6,19,.35);color:#fff}
+.sp-links button .cnt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan);margin-left:5px}
+.sp-foot{padding:10px 4px 2px;border-top:1px solid var(--line);margin-top:8px}
+.saved-pill{display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:99px;border:1px solid var(--line2);
+  background:var(--panel);font-size:12px;color:var(--dim);font-family:'JetBrains Mono',monospace;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.saved-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:var(--glow-green);transition:background .4s ease, box-shadow .4s ease}
+.saved-dot.dirty{background:var(--amber);box-shadow:var(--glow-amber)}
+.gsearch{position:relative}
+.gsearch input{width:280px;max-width:60vw;padding:9px 14px 9px 36px;border-radius:10px;border:1px solid var(--line2);
+  background:rgba(0,0,0,.35);color:var(--ink);font-size:13px}
+.gsearch::before{content:"⌕";position:absolute;left:12px;top:7px;color:var(--faint);font-size:16px}
+.gs-results{position:absolute;top:44px;left:0;right:0;background:#101830;border:1px solid var(--line2);border-radius:12px;
+  max-height:300px;overflow:auto;z-index:60;box-shadow:0 20px 50px rgba(0,0,0,.6);display:none}
+.gs-results.open{display:block}
+.gs-item{padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px}
+.gs-item:hover{background:var(--panel2)}
+.gs-item b{font-family:'JetBrains Mono',monospace;color:var(--cyan);font-weight:600;margin-right:8px}
+
+/* ============ nav ============ */
+.nav{display:flex;gap:6px;padding:14px 26px 0;flex-wrap:wrap;position:sticky;top:86px;z-index:30}
+.nav button{padding:9px 15px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--dim);
+  font-size:13px;font-weight:600;transition:.2s cubic-bezier(.2,.8,.3,1)}
+.nav button:hover{color:var(--ink);background:var(--panel);transform:translateY(-1px)}
+.nav button.active{background:rgba(255,255,255,.09);border-color:var(--line2);color:var(--ink);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08)}
+.nav button .cnt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan);margin-left:5px}
+
+/* ============ shared ============ */
+.view{display:none;padding:20px 26px;position:relative;z-index:1}
+.view.active{display:block}
+@keyframes viewIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;
+  backdrop-filter:blur(var(--glass-blur)) saturate(130%);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(130%);
+  box-shadow:0 18px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease, border-color .35s ease}
+.panel:hover{border-color:var(--line2);transform:translateY(-4px) !important;box-shadow:0 28px 55px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.09);animation-play-state:paused}
+.panel.reveal.in{animation:panelDrift 7s ease-in-out infinite;animation-delay:calc(var(--i,0) * -0.9s)}
+@keyframes panelDrift{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-3px)}
+}
+.panel-title{font-family:'Sora',sans-serif;font-size:14.5px;font-weight:800;margin:0 0 12px;letter-spacing:.01em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.panel-title .spacer{margin-left:auto}
+.eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.btn{padding:9px 16px;border-radius:10px;border:none;font-weight:700;font-size:13px;color:#fff;
+  background:linear-gradient(145deg,#FF3B4E,#C40010);box-shadow:0 8px 20px rgba(227,6,19,.35), inset 0 1px 0 rgba(255,255,255,.3);
+  transition:transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(227,6,19,.45), inset 0 1px 0 rgba(255,255,255,.35)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn-cyan{background:linear-gradient(145deg,#3ED2E8,#0E8FA6);box-shadow:0 8px 20px rgba(62,210,232,.28), inset 0 1px 0 rgba(255,255,255,.3)}
+.btn-ghost{padding:8px 14px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:var(--dim);font-weight:600;font-size:13px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:.2s}
+.btn-ghost:hover{color:var(--ink);border-color:rgba(255,255,255,.3);transform:translateY(-1px)}
+.btn-danger{border-color:rgba(255,59,78,.4);color:var(--red)}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:8px}
+.btn-icon{width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px}
+input,select,textarea{width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--line2);
+  background:rgba(255,255,255,.03);color:var(--ink);font-size:13px;font-family:'Inter',sans-serif;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:border-color .2s ease, background .2s ease}
+input:focus,select:focus,textarea:focus{background:rgba(255,255,255,.06);border-color:rgba(62,210,232,.5)}
+select option{background:#101830;color:var(--ink)}
+textarea{min-height:80px;resize:vertical}
+label.f{display:block;margin-bottom:10px}
+label.f>span{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:0 14px}
+@media(max-width:720px){.grid2,.grid3{grid-template-columns:1fr}}
+.mono{font-family:'JetBrains Mono',monospace}
+.muted{color:var(--dim)}
+.tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;border:1px solid var(--line2);background:var(--panel2);margin:2px 3px 2px 0}
+hr.rule{border:none;border-top:1px solid var(--line);margin:16px 0}
+.empty{padding:20px;border:1px dashed var(--line2);border-radius:12px;color:var(--faint);font-size:13px;text-align:center}
+
+/* pills */
+.pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.03em}
+.p-high{background:rgba(255,59,78,.16);color:#FF7A87;border:1px solid rgba(255,59,78,.4)}
+.p-medium{background:rgba(255,176,32,.14);color:#FFC95C;border:1px solid rgba(255,176,32,.4)}
+.p-low{background:rgba(62,210,232,.12);color:#7BE3F2;border:1px solid rgba(62,210,232,.35)}
+.s-pill{background:var(--panel2);border:1px solid var(--line2);color:var(--dim)}
+.s-complete{background:rgba(47,213,124,.14);color:#6FE8A8;border-color:rgba(47,213,124,.4)}
+.s-withdrawn{background:rgba(255,59,78,.12);color:#FF8A94;border-color:rgba(255,59,78,.35)}
+.s-pend{background:rgba(255,176,32,.12);color:#FFC95C;border-color:rgba(255,176,32,.35)}
+.s-qc{background:rgba(139,123,255,.14);color:#B3A8FF;border-color:rgba(139,123,255,.4)}
+
+/* ============ risk indicator lights — small, glowing like real LEDs ============ */
+.orb{display:inline-block;width:11px;height:11px;border-radius:50%;position:relative;vertical-align:middle;
+  animation:orbPulseLight 2.2s ease-in-out infinite}
+.orb::after{content:"";position:absolute;left:20%;top:14%;width:32%;height:26%;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,255,255,0) 70%)}
+.orb-hi{background:radial-gradient(circle at 34% 30%, #FF8892 0%, #FF3B4E 45%, #7A000C 100%);
+  box-shadow:0 0 5px 1px rgba(255,59,78,.7), 0 0 14px 3px rgba(255,59,78,.35)}
+.orb-med{background:radial-gradient(circle at 34% 30%, #FFD98C 0%, #FFB020 45%, #7A4C00 100%);
+  box-shadow:0 0 5px 1px rgba(255,176,32,.65), 0 0 14px 3px rgba(255,176,32,.32)}
+.orb-low{background:radial-gradient(circle at 34% 30%, #9BF5C6 0%, #2FD57C 45%, #0A5C33 100%);
+  box-shadow:0 0 5px 1px rgba(47,213,124,.6), 0 0 14px 3px rgba(47,213,124,.3)}
+.orb-lg{width:34px;height:34px}
+@keyframes orbPulseLight{
+  0%,100%{filter:brightness(1);transform:scale(1)}
+  50%{filter:brightness(1.35);transform:scale(1.08)}
+}
+
+/* health bar */
+.health{display:inline-flex;align-items:center;gap:7px}
+.hbar{width:60px;height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)}
+.hbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#FF3B4E,#FFB020 55%,#2FD57C);transition:.3s}
+.hpct{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim)}
+
+/* ============ dashboard ============ */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.dur-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-radius:12px;margin-bottom:16px;
+  background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur))}
+.dur-bar select,.dur-bar input{width:auto;padding:7px 11px;font-size:12.5px}
+
+/* call log */
+.call-log-legend{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px;font-size:11.5px;color:var(--dim)}
+.call-log-legend span{display:flex;align-items:center;gap:6px}
+.cl-dot{display:inline-block;width:9px;height:9px;border-radius:50%;animation:orbPulseLight 2.2s ease-in-out infinite}
+.cl-red{background:radial-gradient(circle at 34% 30%,#FF8892,#FF3B4E 55%,#7A000C);box-shadow:0 0 5px 1px rgba(255,59,78,.65),0 0 12px 2px rgba(255,59,78,.3)}
+.cl-yellow{background:radial-gradient(circle at 34% 30%,#FFE79C,#FFB020 55%,#7A4C00);box-shadow:0 0 5px 1px rgba(255,176,32,.6),0 0 12px 2px rgba(255,176,32,.28)}
+.cl-green{background:radial-gradient(circle at 34% 30%,#9BF5C6,#2FD57C 55%,#0A5C33);box-shadow:0 0 5px 1px rgba(47,213,124,.55),0 0 12px 2px rgba(47,213,124,.26)}
+.cl-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+  margin-bottom:7px;background:rgba(255,255,255,.02);transition:background .2s ease, border-color .2s ease}
+.cl-row:hover{background:var(--panel2);border-color:var(--line2)}
+.cl-row .grow{flex:1;min-width:0}
+.cl-row .cl-title{font-weight:600;font-size:13px}
+.cl-row .cl-meta{font-size:11px;color:var(--faint);font-family:'JetBrains Mono',monospace}
+.cl-check-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.cl-check-wrap input{position:absolute;opacity:0;width:0;height:0;pointer-events:none}
+.cl-check-lbl{font-size:9px;letter-spacing:.04em;color:var(--faint);text-transform:uppercase;white-space:nowrap}
+.cl-check{width:20px;height:20px;border-radius:5px;border:1px solid var(--line2);cursor:pointer;flex:none;
+  display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25);transition:.2s;font-size:12px}
+.cl-check.done{background:linear-gradient(145deg,#2FD57C,#1a8f52);border-color:#2FD57C;box-shadow:0 0 10px rgba(47,213,124,.5)}
+.cl-check-blue.done{background:linear-gradient(145deg,#3ED2E8,#0E8FA6);border-color:#3ED2E8;box-shadow:0 0 10px rgba(62,210,232,.5)}
+.cl-opp-note{font-size:10.5px;color:#6FE8A8;margin-top:2px}
+
+/* bell notification icon */
+.bell-btn{width:24px;height:24px;border:none;background:transparent;color:var(--faint);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;border-radius:50%;flex:none;transition:.2s;position:relative}
+.bell-btn:hover{color:var(--amber);background:rgba(255,176,32,.12)}
+.bell-btn.armed{color:var(--amber)}
+.bell-btn.armed::after{content:"";position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;
+  background:var(--amber);box-shadow:0 0 5px rgba(255,176,32,.8);animation:orbPulseLight 2.2s ease-in-out infinite}
+
+.kpi{position:relative;background:linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  border:1px solid var(--line);border-radius:var(--r);padding:16px;overflow:hidden;
+  backdrop-filter:blur(var(--glass-blur)) saturate(140%);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(140%);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease, border-color .35s ease;
+  box-shadow:0 14px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.07)}
+/* idle float only kicks in once the entrance reveal has finished, so the two
+   transform animations never fight each other */
+.kpi.reveal.in{animation:kpiFloat 5.5s ease-in-out infinite;animation-delay:calc(var(--i,0) * -0.7s)}
+@keyframes kpiFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-4px)}
+}
+.kpi::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.09) 50%,transparent 70%);
+  transform:translateX(-120%);transition:transform .8s ease}
+.kpi:hover::before{transform:translateX(120%)}
+.kpi:hover{transform:translateY(-7px) scale(1.015) !important;border-color:var(--line2);box-shadow:0 26px 55px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12);
+  animation-play-state:paused}
+.kpi .num{font-family:'Archivo Black','Sora',sans-serif;font-size:32px;font-weight:900;line-height:1;margin:8px 0 4px;letter-spacing:-.01em}
+.kpi .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:700}
+.kpi .sub{font-size:11px;color:var(--faint);font-family:'JetBrains Mono',monospace}
+.kpi .edge{position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0}
+.kpi.clickable{cursor:pointer}
+.dash-cols{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+@media(max-width:980px){.dash-cols{grid-template-columns:1fr}}
+.mini-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+  margin-bottom:8px;background:rgba(255,255,255,.02);cursor:pointer;transition:transform .2s cubic-bezier(.2,.8,.2,1), border-color .2s ease, background .2s ease}
+.mini-row:hover{border-color:var(--line2);background:var(--panel2);transform:translateX(3px)}
+.mini-row .grow{flex:1;min-width:0}
+.mini-row .nm{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-row .mt{font-size:11px;color:var(--faint);font-family:'JetBrains Mono',monospace}
+
+/* ============ cases table ============ */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar select,.toolbar input{width:auto;min-width:130px}
+.bulkbar{display:none;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:10px 14px;border-radius:12px;
+  background:rgba(62,210,232,.08);border:1px solid rgba(62,210,232,.3)}
+.bulkbar.on{display:flex}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r)}
+table.dt{width:100%;border-collapse:collapse;min-width:1000px}
+.dt th{position:sticky;top:0;background:#101830;text-align:left;padding:11px 12px;font-size:10px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line2);cursor:pointer;user-select:none;white-space:nowrap}
+.dt th:hover{color:var(--ink)}
+.dt td{padding:11px 12px;border-bottom:1px solid var(--line);font-size:13px;white-space:nowrap}
+.dt tbody tr{cursor:pointer;transition:.12s}
+.dt tbody tr:hover{background:var(--panel2)}
+.dt .cid{font-family:'JetBrains Mono',monospace;color:var(--cyan);font-weight:600}
+.rowact{display:flex;gap:6px}
+
+/* ============ work case ============ */
+.wc-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.wc-head h2{margin:0;font-family:'Sora',sans-serif;font-size:25px;font-weight:900;color:#fff;letter-spacing:-.01em}
+.wc-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:1050px){.wc-grid{grid-template-columns:1fr}}
+.checklist label{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;transition:.12s}
+.checklist label:hover{background:var(--panel2)}
+.checklist input{width:16px;height:16px;accent-color:var(--green)}
+.doc-row,.note-row,.cb-row{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--line);
+  border-radius:10px;margin-bottom:7px;background:rgba(0,0,0,.2);font-size:13px}
+.timeline{position:relative;padding-left:22px}
+.timeline::before{content:"";position:absolute;left:7px;top:4px;bottom:4px;width:2px;background:linear-gradient(180deg,var(--cyan),var(--violet))}
+.tl-item{position:relative;padding:0 0 14px 8px;font-size:12.5px}
+.tl-item::before{content:"";position:absolute;left:-19px;top:4px;width:10px;height:10px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #9BE9F5, #0E8FA6);box-shadow:0 0 10px rgba(62,210,232,.6)}
+.tl-item .when{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--faint)}
+.pend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.pend-cell{border:1px solid var(--line);border-radius:12px;padding:12px;background:rgba(0,0,0,.25);text-align:center}
+.pend-cell.done{border-color:rgba(47,213,124,.4);background:rgba(47,213,124,.07)}
+.pend-cell.due{border-color:rgba(255,176,32,.5);background:rgba(255,176,32,.08);box-shadow:var(--glow-amber)}
+.pend-cell.overdue{border-color:rgba(255,59,78,.5);background:rgba(255,59,78,.08);box-shadow:var(--glow-red)}
+.pend-cell .pn{font-family:'Sora',sans-serif;font-weight:700;font-size:13px}
+.pend-cell .pd{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);margin-top:4px}
+.nba{padding:12px 14px;border-radius:12px;background:linear-gradient(145deg,rgba(62,210,232,.12),rgba(139,123,255,.1));
+  border:1px solid rgba(62,210,232,.35);font-size:13px;display:flex;gap:10px;align-items:center}
+.nba b{color:var(--cyan)}
+
+/* ============ board ============ */
+.board{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px}
+.bcol{min-width:230px;flex:0 0 230px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px;
+  backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));transition:border-color .25s ease}
+.bcol h4{margin:0 0 10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between}
+.bcard{background:linear-gradient(160deg, rgba(255,255,255,.09), rgba(255,255,255,.03));border:1px solid var(--line2);
+  border-radius:11px;padding:11px;margin-bottom:9px;cursor:grab;font-size:12.5px;transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease;
+  box-shadow:0 8px 18px rgba(0,0,0,.3);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.bcard:hover{transform:translateY(-3px) scale(1.015);box-shadow:0 16px 30px rgba(0,0,0,.4)}
+.bcard .cid{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)}
+.bcol.dragover{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
+
+/* ============ calendar ============ */
+.cal-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.cal-head h3{margin:0;font-family:'Sora',sans-serif;font-size:18px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal .dow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);text-align:center;padding:6px 0;font-weight:600}
+.cal .day{min-height:88px;border:1px solid var(--line);border-radius:10px;padding:7px;background:rgba(255,255,255,.02);cursor:pointer;
+  transition:transform .2s cubic-bezier(.2,.8,.2,1), border-color .2s ease, background .2s ease}
+.cal .day:hover{border-color:var(--line2);background:var(--panel2);transform:translateY(-2px)}
+.cal .day.other{opacity:.32}
+.cal .day.today{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}
+.cal .dnum{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim)}
+.cal .evt{margin-top:4px;font-size:10.5px;padding:2px 6px;border-radius:6px;background:rgba(255,176,32,.15);
+  border:1px solid rgba(255,176,32,.35);color:#FFC95C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ============ insights ============ */
+.chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+canvas.chart{width:100%;height:220px}
+
+/* ============ templates / extractor / io ============ */
+.tpl-card{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;background:rgba(0,0,0,.2)}
+.tpl-card h5{margin:0 0 6px;font-size:13.5px;font-family:'Sora',sans-serif}
+.tpl-body{font-size:12.5px;color:var(--dim);white-space:pre-wrap;max-height:120px;overflow:auto;background:rgba(0,0,0,.25);
+  border:1px solid var(--line);border-radius:8px;padding:10px;font-family:'JetBrains Mono',monospace;line-height:1.5}
+.dropzone{border:2px dashed var(--line2);border-radius:var(--r);padding:36px;text-align:center;color:var(--dim);
+  transition:.15s;cursor:pointer}
+.dropzone:hover,.dropzone.drag{border-color:var(--cyan);background:rgba(62,210,232,.05);color:var(--ink)}
+.flagbox{padding:10px 13px;border-radius:10px;margin:6px 0;font-size:13px;font-weight:600}
+.flag-red{background:rgba(255,59,78,.12);border:1px solid rgba(255,59,78,.45);color:#FF8A94}
+.flag-amber{background:rgba(255,176,32,.1);border:1px solid rgba(255,176,32,.4);color:#FFC95C}
+.flag-ok{background:rgba(47,213,124,.1);border:1px solid rgba(47,213,124,.4);color:#6FE8A8}
+
+/* ============ modal & toast ============ */
+.overlay{position:fixed;inset:0;background:rgba(3,6,12,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:none;
+  align-items:center;justify-content:center;padding:18px;z-index:100}
+.overlay.open{display:flex;animation:overlayIn .25s ease}
+@keyframes overlayIn{from{opacity:0}to{opacity:1}}
+.modal{background:linear-gradient(170deg,rgba(24,33,58,.82),rgba(9,13,24,.88));border:1px solid var(--line2);border-radius:20px;padding:22px;
+  width:100%;max-width:640px;max-height:92vh;overflow-y:auto;box-shadow:0 40px 90px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);
+  animation:modalIn .35s cubic-bezier(.16,.9,.3,1.1)}
+@keyframes modalIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
+.modal.wide{max-width:900px}
+.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.mhead h3{margin:0;font-family:'Sora',sans-serif;font-size:17px;font-weight:700}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:#101830;
+  border:1px solid var(--line2);border-radius:12px;padding:11px 20px;font-size:13px;z-index:200;transition:.3s;
+  box-shadow:0 16px 40px rgba(0,0,0,.6);opacity:0}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+.reminder-banner{position:fixed;top:16px;right:16px;z-index:250;display:flex;align-items:center;gap:12px;
+  max-width:min(420px,calc(100vw - 32px));padding:13px 16px;border-radius:12px;
+  background:linear-gradient(160deg, rgba(255,176,32,.16), rgba(16,24,48,.96));
+  border:1px solid rgba(255,176,32,.45);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:0 20px 50px rgba(0,0,0,.6), 0 0 0 1px rgba(255,176,32,.15);
+  font-size:12.5px;color:var(--ink);
+  transform:translateX(120%);opacity:0;transition:transform .4s cubic-bezier(.16,.9,.3,1.05), opacity .3s ease}
+.reminder-banner.in{transform:translateX(0);opacity:1}
+.reminder-banner b{display:block;font-size:13px;margin-bottom:2px;color:#FFC95C}
+.reminder-banner span{color:var(--dim);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}
+.callflow{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:12px}
+.cf-btn{padding:10px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:var(--dim);
+  font-size:12px;font-weight:600;text-align:left;transition:.15s}
+.cf-btn:hover{color:var(--ink);border-color:rgba(255,255,255,.3)}
+.cf-btn.on{background:linear-gradient(145deg,rgba(62,210,232,.2),rgba(62,210,232,.06));border-color:var(--cyan);color:var(--ink)}
+.timerbox{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;letter-spacing:.06em;
+  padding:10px 18px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid var(--line2);display:inline-block}
+.timerbox.live{border-color:var(--green);box-shadow:var(--glow-green);color:#6FE8A8}
+/* ============ brand footer — single minimal glowing line ============ */
+#v-dashboard{font-weight:500}
+#v-dashboard .muted, #v-dashboard .mono{font-weight:600}
+
+.brand-footer{margin:48px 0 20px;text-align:center;position:relative;z-index:1}
+.bf-line{display:inline-flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;
+  font-size:11.5px;letter-spacing:.05em;color:rgba(255,255,255,.4);
+  padding:10px 22px;border-radius:99px;
+  text-shadow:0 0 18px rgba(227,6,19,.25);
+  animation:footerGlow 6s ease-in-out infinite}
+@keyframes footerGlow{
+  0%,100%{color:rgba(255,255,255,.38);text-shadow:0 0 12px rgba(227,6,19,.18)}
+  50%{color:rgba(255,255,255,.58);text-shadow:0 0 22px rgba(227,6,19,.4)}
+}
+.bf-sep{color:rgba(255,255,255,.2)}
+.bf-warn{font-weight:700;color:rgba(255,138,148,.65);letter-spacing:.1em}
+.bf-maker{color:inherit;text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.3);transition:color .2s ease, border-color .2s ease, text-shadow .2s ease}
+.bf-maker:hover{color:var(--cyan);border-color:var(--cyan);text-shadow:0 0 14px rgba(62,210,232,.6)}
+.bf-contact-links{opacity:0;max-width:0;display:inline-block;overflow:hidden;white-space:nowrap;
+  transition:opacity .3s ease, max-width .4s ease;vertical-align:middle}
+.bf-line:hover .bf-contact-links, .bf-line:focus-within .bf-contact-links{opacity:1;max-width:220px;margin-left:2px}
+.bf-contact-links a{color:rgba(255,255,255,.55);text-decoration:none;transition:color .2s ease}
+.bf-contact-links a:hover{color:var(--cyan)}
+
+/* ============ page nav (links between the 4 separate HTML files) ============ */
+.page-nav{display:flex;gap:6px;padding:14px 26px 0;flex-wrap:wrap;position:relative;z-index:2}
+.page-nav a, .page-nav button{padding:9px 15px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--dim);
+  font-size:13px;font-weight:600;transition:.2s cubic-bezier(.2,.8,.3,1);text-decoration:none;display:inline-block}
+.page-nav a:hover, .page-nav button:hover{color:var(--ink);background:var(--panel);transform:translateY(-1px)}
+.page-nav a.active, .page-nav button.active{background:rgba(255,255,255,.09);border-color:var(--line2);color:#fff;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08)}
+
+/* ============ external record links (ABN / CN / BCN) ============ */
+.ext-link{color:var(--cyan);text-decoration:none;border-bottom:1px dotted rgba(62,210,232,.4);
+  display:inline-flex;align-items:center;gap:4px;transition:.2s}
+.ext-link:hover{color:#7BE3F2;border-color:#7BE3F2}
+.ext-link svg{width:11px;height:11px;flex:none}
+
+/* ============ outstanding sub-checklist ============ */
+.outstanding-box{margin-top:10px;padding:12px;border-radius:10px;background:rgba(255,138,61,.08);
+  border:1px solid rgba(255,138,61,.35)}
+.outstanding-box .eyebrow{color:#FFB27A;margin-bottom:8px}
+.outstanding-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
+.outstanding-chip{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;
+  border:1px solid var(--line2);background:rgba(0,0,0,.2);cursor:pointer;font-size:12.5px;transition:.15s}
+.outstanding-chip:hover{border-color:rgba(255,138,61,.5)}
+.outstanding-chip input{width:14px;height:14px;accent-color:#FF8A3D}
+.outstanding-chip.checked{background:rgba(255,138,61,.14);border-color:rgba(255,138,61,.5);color:#FFB27A}
+
+/* ============ morning brief (dashboard top) ============ */
+.morning-brief{margin-bottom:18px;padding:16px 18px;border-radius:14px;
+  background:linear-gradient(135deg, rgba(255,176,32,.12), rgba(227,6,19,.08));
+  border:1px solid rgba(255,176,32,.3);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur))}
+.morning-brief-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.morning-brief-head b{font-family:'Sora',sans-serif;font-size:15px;font-weight:800;color:#fff}
+.morning-brief-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.mb-item{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;transition:.2s}
+.mb-item:hover{border-color:rgba(255,176,32,.5);transform:translateY(-2px)}
+.mb-item .mb-num{font-family:'Archivo Black','Sora',sans-serif;font-size:22px;font-weight:900;color:#FFC95C}
+.mb-item .mb-lbl{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-top:2px}
+
+/* ============ per-case call log (inside Cases/Work Case view) ============ */
+.case-call-row{padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:rgba(255,255,255,.02)}
+.case-call-row .cc-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.case-call-row .cc-notes{font-size:12.5px;color:var(--dim);margin-top:6px;white-space:pre-wrap}
+.case-call-row .cc-flags{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;font-size:11px}
+.case-call-row .cc-flags span{display:flex;align-items:center;gap:5px;color:var(--faint)}
+.case-call-row .cc-flags span.on{color:#6FE8A8}
+
+/* ============ notes-by-situation (Notes helper page) ============ */
+.note-situation-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.note-situation-tabs button{padding:8px 14px;border-radius:99px;border:1px solid var(--line2);background:var(--panel);
+  color:var(--dim);font-size:12.5px;font-weight:600;transition:.2s}
+.note-situation-tabs button.active{background:rgba(62,210,232,.16);border-color:var(--cyan);color:#fff}
+</style>
+</head>
+<body>
+
+<canvas id="pageFx" style="position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;opacity:.65"></canvas>
+
+<header class="topbar" style="z-index:2">
+  <div class="topbar-inner">
+    <div class="logo">
+      <div class="nab-badge">
+        <span class="nab-star-emblem">
+          <svg viewBox="0 0 200 190" width="30" height="29">
+            <path fill="#E30613" d="M 83.5 1.4 L 109.2 62.3 L 149.0 39.4 L 131.3 81.8 L 187.3 99.4 L 129.9 111.3 L 138.8 149.0 L 105.9 128.5 L 73.0 191.0 L 77.5 120.5 L 34.3 122.7 L 66.0 93.3 L 26.6 55.0 L 80.2 67.4 Z"/>
+            <path stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".9" d="M 96 70 L 66 118 M 116 76 L 86 122"/>
+          </svg>
+        </span>
+        <span class="nab-word">nab</span>
+        <span class="nab-divider"></span>
+        <span class="nab-tagline">more<br>than<br>money</span>
+      </div>
+    </div>
+    <div class="fadeable">
+      <div class="gsearch">
+        <input id="gsearch" placeholder="Search Case ID, Entity, ABN…" autocomplete="off">
+        <div class="gs-results" id="gsResults"></div>
+      </div>
+    </div>
+    <div class="top-actions fadeable">
+      <div class="saved-pill"><span class="saved-dot" id="savedDot"></span><span id="savedTxt">Saved</span></div>
+      <button class="btn-ghost btn-sm" onclick="go('io')">Import / Export</button>
+      <button class="btn" onclick="openCaseForm()">+ Quick Add</button>
+    </div>
+  </div>
+  <button class="hamburger" id="hamburgerBtn" onclick="openSidePanel()" aria-label="Open menu">
+    <span></span><span></span><span></span>
+  </button>
+  <button class="back-btn" id="backBtn" onclick="goBack()" aria-label="Go back" style="display:none">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+</header>
+
+<!-- ================= SIDE PANEL ================= -->
+<div class="side-overlay" id="sideOverlay" onclick="if(event.target===this)closeSidePanel()">
+  <div class="side-panel" id="sidePanel">
+    <div class="sp-head">
+      <div class="nab-badge" style="padding:6px 11px">
+        <span class="nab-star-emblem" style="width:20px">
+          <svg viewBox="0 0 200 190" width="20" height="19">
+            <path fill="#E30613" d="M 83.5 1.4 L 109.2 62.3 L 149.0 39.4 L 131.3 81.8 L 187.3 99.4 L 129.9 111.3 L 138.8 149.0 L 105.9 128.5 L 73.0 191.0 L 77.5 120.5 L 34.3 122.7 L 66.0 93.3 L 26.6 55.0 L 80.2 67.4 Z"/>
+            <path stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".9" d="M 96 70 L 66 118 M 116 76 L 86 122"/>
+          </svg>
+        </span>
+        <span class="nab-word" style="font-size:16px">nab</span>
+      </div>
+      <button class="btn-ghost btn-icon" onclick="closeSidePanel()">✕</button>
+    </div>
+    <div class="sp-links" id="sideNav">
+      <button data-v="dashboard" class="active" onclick="go('dashboard');closeSidePanel()">Dashboard</button>
+      <button data-v="cases" onclick="go('cases');closeSidePanel()">Cases <span class="cnt" id="navCaseCnt"></span></button>
+      <button data-v="work" onclick="go('work');closeSidePanel()">Work Case</button>
+      <button data-v="calls" onclick="go('calls');closeSidePanel()">Calls</button>
+      <button data-v="notes" onclick="go('notes');closeSidePanel()">Notes Helper</button>
+      <button data-v="board" onclick="go('board');closeSidePanel()">Board</button>
+      <button data-v="calendar" onclick="go('calendar');closeSidePanel()">Calendar</button>
+      <button data-v="insights" onclick="go('insights');closeSidePanel()">Insights</button>
+      <button data-v="extractor" onclick="go('extractor');closeSidePanel()">PDF Extractor</button>
+      <button data-v="io" onclick="go('io');closeSidePanel()">Import / Export</button>
+    </div>
+    <div class="sp-foot eyebrow">nab kyc production crm</div>
+  </div>
+</div>
+
+<nav class="page-nav">
+  <button data-v="dashboard" class="active" onclick="go('dashboard')">Dashboard</button>
+  <button data-v="cases" onclick="go('cases')">Cases</button>
+  <button data-v="calls" onclick="go('calls')">Calls</button>
+  <button data-v="notes" onclick="go('notes')">Notes Helper</button>
+</nav>
+
+<section class="view active" id="v-dashboard">
+
+  <div class="morning-brief reveal" id="morningBrief">
+    <div class="morning-brief-head">
+      <span style="font-size:20px">☀️</span>
+      <b id="morningGreeting">Good morning</b>
+      <span class="eyebrow" id="morningDate"></span>
+    </div>
+    <div class="morning-brief-grid" id="morningGrid"></div>
+  </div>
+
+  <div class="dur-bar reveal">
+    <span class="eyebrow">Duration</span>
+    <select id="durSelect" onchange="onDurationChange()">
+      <option value="all">All time</option>
+      <option value="month">Month</option>
+      <option value="custom">Custom range</option>
+    </select>
+    <input type="month" id="durMonth" style="display:none;width:auto" onchange="renderAll()">
+    <input type="date" id="durFrom" style="display:none;width:auto" onchange="renderAll()">
+    <span id="durToLbl" class="muted" style="display:none">to</span>
+    <input type="date" id="durTo" style="display:none;width:auto" onchange="renderAll()">
+    <span class="spacer"></span>
+    <span class="eyebrow" id="durSummary"></span>
+  </div>
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="chart-grid reveal" style="grid-template-columns:1.3fr 1fr;margin-bottom:16px">
+    <div class="panel">
+      <div class="panel-title">Cases picked per day <span class="spacer"></span>
+        <select id="weekChartMode" onchange="renderDashboard()" style="width:auto;padding:5px 9px;font-size:11.5px">
+          <option value="month">Monthly view</option>
+          <option value="custom">Custom range</option>
+        </select>
+      </div>
+      <canvas class="chart" id="chWeek"></canvas>
+    </div>
+    <div class="panel"><div class="panel-title">Case book composition</div>
+      <canvas class="chart" id="chBook"></canvas></div>
+  </div>
+
+  <div class="dash-cols reveal">
+    <div class="panel">
+      <div class="panel-title">Pending callbacks <span class="spacer"></span>
+        <span class="eyebrow" id="cbCountLbl"></span></div>
+      <div class="eyebrow" style="margin-bottom:6px">Overdue</div>
+      <div id="dashCbOverdue"></div>
+      <hr class="rule">
+      <div class="eyebrow" style="margin-bottom:6px">Upcoming</div>
+      <div id="dashCbUpcoming"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">High ageing <span class="spacer"></span><span class="eyebrow">&gt; 10 days</span></div>
+      <div id="dashHighAgeing"></div>
+      <hr class="rule">
+      <div class="panel-title">Unworked <span class="spacer"></span><span class="eyebrow">no update in 2+ days</span></div>
+      <div id="dashUnworked"></div>
+    </div>
+  </div>
+
+  <div class="panel reveal" style="margin-top:16px">
+    <div class="panel-title">Call log <span class="spacer"></span><span class="eyebrow">all time</span></div>
+    <div class="call-log-legend">
+      <span><i class="cl-dot cl-red"></i> Unanswered</span>
+      <span><i class="cl-dot cl-yellow"></i> Answered</span>
+      <span><i class="cl-dot cl-green"></i> Opportunity confirmed</span>
+    </div>
+    <div id="dashCallLog"></div>
+  </div>
+</section>
+
+<!-- ================= CASES TABLE ================= -->
+<section class="view" id="v-cases">
+  <div class="panel">
+    <div class="toolbar">
+      <select id="fltStatus" onchange="renderCases()"><option value="">Status: All</option></select>
+      <select id="fltRisk" onchange="renderCases()"><option value="">Risk: All</option>
+        <option>High</option><option>Medium</option><option>Low</option></select>
+      <select id="fltType" onchange="renderCases()"><option value="">Type: All</option><option>Assisted</option><option>Online</option></select>
+      <input id="fltSearch" placeholder="Filter results…" style="min-width:200px" oninput="renderCases()">
+      <span class="spacer" style="margin-left:auto"></span>
+      <span class="eyebrow" id="caseCountLbl"></span>
+    </div>
+    <div class="bulkbar" id="bulkbar">
+      <b class="mono" id="bulkCount">0 selected</b>
+      <select id="bulkStatus" style="width:auto"><option value="">Change status…</option></select>
+      <button class="btn-cyan btn btn-sm" onclick="applyBulk()">Apply</button>
+      <button class="btn-ghost btn-sm btn-danger" onclick="bulkDelete()">Delete selected</button>
+      <button class="btn-ghost btn-sm" onclick="clearSelection()">Clear</button>
+    </div>
+    <div class="tablewrap">
+      <table class="dt">
+        <thead><tr>
+          <th style="width:34px"><input type="checkbox" id="selAll" onclick="toggleSelectAll(this)" style="width:16px;height:16px"></th>
+          <th onclick="sortCases('caseId')">Case ID ⇅</th>
+          <th onclick="sortCases('entity')">Entity Name ⇅</th>
+          <th onclick="sortCases('status')">Status ⇅</th>
+          <th onclick="sortCases('ageing')">Ageing ⇅</th>
+          <th>Next Action</th>
+          <th onclick="sortCases('type')">Type ⇅</th>
+          <th onclick="sortCases('risk')">Risk ⇅</th>
+          <th onclick="sortCases('health')">Health ⇅</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="casesBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WORK CASE ================= -->
+<section class="view" id="v-work">
+  <canvas id="caseRoadFx" style="position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;opacity:0;transition:opacity 1s ease"></canvas>
+  <div id="workWrap" style="position:relative;z-index:1"></div>
+</section>
+
+<!-- ================= BOARD ================= -->
+<section class="view" id="v-board">
+  <div class="eyebrow" style="margin-bottom:12px">Lifecycle board — drag cards between phases</div>
+  <div class="board" id="boardWrap"></div>
+</section>
+
+<!-- ================= CALENDAR ================= -->
+<section class="view" id="v-calendar">
+  <div class="panel">
+    <div class="cal-head">
+      <button class="btn-ghost btn-sm" onclick="calShift(-1)">←</button>
+      <h3 id="calTitle"></h3>
+      <button class="btn-ghost btn-sm" onclick="calShift(1)">→</button>
+      <button class="btn-ghost btn-sm" onclick="calToday()">Today</button>
+      <span class="eyebrow" style="margin-left:auto">Callback schedule</span>
+    </div>
+    <div class="cal" id="calGrid"></div>
+  </div>
+</section>
+
+<!-- ================= INSIGHTS ================= -->
+<section class="view" id="v-insights">
+  <div class="chart-grid">
+    <div class="panel"><div class="panel-title">Cases by status</div><canvas class="chart" id="chStatus"></canvas></div>
+    <div class="panel"><div class="panel-title">Risk mix</div><canvas class="chart" id="chPriority"></canvas></div>
+    <div class="panel"><div class="panel-title">Assisted vs Online</div><canvas class="chart" id="chOwner"></canvas></div>
+    <div class="panel"><div class="panel-title">Average health by status</div><canvas class="chart" id="chHealth"></canvas></div>
+  </div>
+</section>
+
+<!-- ================= PDF EXTRACTOR ================= -->
+<section class="view" id="v-extractor">
+  <div class="dash-cols">
+    <div class="panel">
+      <div class="panel-title">PDF Extractor</div>
+      <div class="dropzone" id="pdfDrop" onclick="document.getElementById('pdfFile').click()">
+        <div style="font-size:30px;margin-bottom:8px">⬢</div>
+        Drop a PDF here or click to browse<br>
+        <span class="eyebrow">Entity name · ABN · ACN · Directors · Shareholders</span>
+      </div>
+      <input type="file" id="pdfFile" accept=".pdf" style="display:none" onchange="handlePdf(this.files[0])">
+      <div id="pdfStatus" style="margin-top:12px"></div>
+      <div id="pdfFlags"></div>
+      <div id="pdfExtract"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Raw extraction text</div>
+      <div class="tpl-body" id="pdfRaw" style="max-height:420px">No PDF processed yet.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= IMPORT / EXPORT ================= -->
+<section class="view" id="v-io">
+  <div class="dash-cols">
+    <div class="panel">
+      <div class="panel-title">Import cases</div>
+      <div class="dropzone" id="ioDrop" onclick="document.getElementById('ioFile').click()">
+        <div style="font-size:30px;margin-bottom:8px">⇪</div>
+        Drop a file or click to browse<br>
+        <span class="eyebrow">.xlsx · .xls · .xlsm · .csv · .tsv · .txt — any column layout, headers auto-mapped</span>
+      </div>
+      <input type="file" id="ioFile" accept=".xlsx,.xls,.xlsm,.csv,.tsv,.txt" style="display:none" onchange="handleImport(this.files[0])">
+      <div id="ioStatus" style="margin-top:12px"></div>
+      <div class="tablewrap" id="ioPreviewWrap" style="display:none;margin-top:12px;max-height:320px;overflow:auto">
+        <table class="dt" style="min-width:600px"><thead id="ioPrevHead"></thead><tbody id="ioPrevBody"></tbody></table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Export</div>
+      <p class="muted" style="font-size:13px">Export the full case book including calls, notes and status history.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-cyan btn" onclick="exportXLSX()">Export .xlsx</button>
+        <button class="btn-ghost" onclick="exportCSV()">Export .csv</button>
+        <button class="btn-ghost" onclick="exportJSON()">Backup .json</button>
+      </div>
+      <hr class="rule">
+      <div class="panel-title">Settings</div>
+      <label class="f"><span>My name</span>
+        <input id="setMe" onchange="S.me=this.value;save();renderAll()"></label>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-calls">
+  <div class="panel reveal" style="margin-bottom:16px">
+    <div class="panel-title">Call logging workspace</div>
+    <div class="grid3">
+      <label class="f"><span>Case</span><select id="callCase" onchange="renderCallWorkspace()"></select></label>
+      <label class="f"><span>Call timer</span>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span class="timerbox" id="timerBox">00:00</span>
+          <button class="btn-ghost btn-sm" id="timerBtn" onclick="toggleTimer()">▶ Start</button>
+        </div>
+      </label>
+      <label class="f"><span>Direction</span><select id="callDirection"><option>Outbound</option><option>Inbound</option></select></label>
+    </div>
+    <div class="eyebrow" style="margin-bottom:8px">Scenario</div>
+    <div class="callflow" id="callScenarios"></div>
+    <div class="grid2">
+      <label class="f"><span>Outcome</span><select id="callOutcome">
+        <option>Connected — verified</option><option>Connected — callback requested</option>
+        <option>No answer</option><option>Voicemail left</option><option>Failed authentication</option>
+        <option>eKYC consent captured</option><option>Fraud alert raised</option><option>Wrong number</option></select></label>
+      <label class="f"><span>Next callback (auto-set on No answer)</span><input type="datetime-local" id="callNextCb"></label>
+    </div>
+    <label class="f"><span>Call notes</span><textarea id="callNotes" placeholder="Key points, objections, commitments…"></textarea></label>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn" onclick="submitCall()">Log call</button>
+      <span class="muted" style="font-size:12px;align-self:center" id="callHint"></span>
+    </div>
+  </div>
+
+  <div class="dash-cols reveal">
+    <div class="panel">
+      <div class="panel-title">Script helper</div>
+      <div id="callScript" class="tpl-body" style="max-height:320px"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Recent calls for this case</div>
+      <div id="callRecentList"></div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-notes">
+
+  <div class="panel reveal" style="margin-bottom:16px">
+    <div class="panel-title">Case notes <span class="spacer"></span>
+      <select id="noteCase" style="width:auto" onchange="renderCaseNotes()"></select>
+    </div>
+    <div class="note-situation-tabs" id="situationTabs"></div>
+    <div id="caseNotesList"></div>
+    <hr class="rule">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select id="wcNoteSituation" style="width:auto"><option>General</option><option>Trust structure</option><option>Documents outstanding</option><option>Fraud / risk</option><option>Customer dispute</option><option>eKYC</option><option>PDF extraction</option><option>Action pack</option></select>
+      <input id="wcNote" placeholder="Add a note for the selected case…" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter')addNoteForSelectedCase()">
+      <button class="btn-cyan btn btn-sm" onclick="addNoteForSelectedCase()">Add</button>
+    </div>
+  </div>
+
+  <div class="panel reveal">
+    <div class="panel-title">Template library
+      <span class="spacer"></span>
+      <select id="tplCase" style="width:auto" onchange="renderTemplates()"></select>
+      <select id="tplCat" style="width:auto" onchange="renderTemplates()"><option value="">All categories</option></select>
+      <input id="tplSearch" style="width:200px" placeholder="Search templates…" oninput="renderTemplates()">
+    </div>
+    <div id="tplList"></div>
+  </div>
+</section>
+
+<!-- ================= CASE FORM MODAL ================= -->
+<div class="overlay" id="caseModal">
+  <div class="modal">
+    <div class="mhead"><h3 id="caseModalTitle">New case</h3><button class="btn-ghost btn-sm" onclick="closeModal('caseModal')">✕</button></div>
+    <div class="grid2">
+      <label class="f"><span>Case ID</span><input id="cfCaseId" placeholder="Auto if blank"></label>
+      <label class="f"><span>Entity name</span><input id="cfEntity" placeholder="e.g. Meridian Holdings Pty Ltd"></label>
+      <label class="f"><span>ABN</span><input id="cfAbn" placeholder="11 digits"></label>
+      <label class="f"><span>ACN</span><input id="cfAcn" placeholder="9 digits"></label>
+      <label class="f"><span>Customer name</span><input id="cfCustomer"></label>
+      <label class="f"><span>Customer DOB</span><input type="date" id="cfDob"></label>
+      <label class="f"><span>CN</span><input id="cfCn"></label>
+      <label class="f"><span>BCN</span><input id="cfBcn"></label>
+      <label class="f"><span>Phone</span><input id="cfPhone"></label>
+      <label class="f"><span>Email</span><input id="cfEmail"></label>
+      <label class="f"><span>Status</span><select id="cfStatus"></select></label>
+      <label class="f"><span>Case entered date</span><input type="date" id="cfEntered"></label>
+      <label class="f" style="grid-column:1/-1"><span>Tags (comma separated)</span><input id="cfTags" placeholder="trust, complex, NBN…"></label>
+    </div>
+    <p class="muted" style="font-size:11.5px;margin:2px 0 0">Type is judged automatically from the case ID / entity name (contains "sbc" → Assisted, "ssoo" → Online). Risk is calculated automatically from outstanding requirements and ageing.</p>
+    <div class="actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn-ghost" onclick="closeModal('caseModal')">Cancel</button>
+      <button class="btn" onclick="saveCaseForm()">Save case</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="dayModal">
+  <div class="modal">
+    <div class="mhead"><h3 id="dayModalTitle">Callbacks</h3><button class="btn-ghost btn-sm" onclick="closeModal('dayModal')">✕</button></div>
+    <div id="dayModalBody"></div>
+  </div>
+</div>
+
+<div class="overlay" id="packModal">
+  <div class="modal wide">
+    <div class="mhead"><h3>Customer Action Pack</h3><button class="btn-ghost btn-sm" onclick="closeModal('packModal')">✕</button></div>
+    <div class="tpl-body" id="packBody" style="max-height:420px"></div>
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn-cyan btn" onclick="copyText(document.getElementById('packBody').textContent);toast('Action pack copied')">Copy</button>
+      <button class="btn-ghost" onclick="downloadPack()">Download TXT</button>
+      <button class="btn-ghost" onclick="packToNotes()">Add to notes</button>
+    </div>
+  </div>
+</div>
+<div id="journeyPop" style="display:none;position:fixed;z-index:120;background:#101830;border:1px solid var(--line2);
+  border-radius:10px;padding:10px 14px;font-size:12px;box-shadow:0 16px 40px rgba(0,0,0,.6);pointer-events:none"></div>
+
+<div class="overlay" id="listModal">
+  <div class="modal wide">
+    <div class="mhead"><h3 id="listModalTitle">Cases</h3><button class="btn-ghost btn-sm" onclick="closeModal('listModal')">✕</button></div>
+    <div id="listModalBody"></div>
+  </div>
+</div>
+
+<footer class="brand-footer reveal">
+  <div class="bf-line">
+    <span>Personal Productivity Tool</span>
+    <span class="bf-sep">&middot;</span>
+    <span class="bf-warn">FOR INTERNAL USE ONLY</span>
+    <span class="bf-sep">&middot;</span>
+    <span>Made by
+      <a href="https://teams.microsoft.com/l/chat/0/0?users=shubham.jhanji@nab.com.au" target="_blank" rel="noopener" class="bf-maker"><b>MachineMine</b></a>
+      <span class="bf-contact-links">
+        (<a href="https://teams.microsoft.com/l/chat/0/0?users=shubham.jhanji@nab.com.au" target="_blank" rel="noopener">Teams</a>
+        &middot; <a href="mailto:Shubham.jhanji@nab.co.au">Email</a>)
+      </span>
+    </span>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+/* =====================================================================
+   NAB KYC CRM — SHARED CORE
+   Embedded identically in dashboard.html, cases.html, calls.html, notes.html.
+   All four read/write the same localStorage key so they act as one app
+   across tabs/windows on the same machine.
+   ===================================================================== */
+
+const STORE_KEY = "nab-kyc-crm-v2";
+
+/* ---------- status taxonomy ---------- */
+const STATUSES = [
+  "New",
+  "1st Contact",
+  "2nd Contact",
+  "Last Contact",
+  "Pre-Withdrawal Sent",
+  "Withdrawn",
+  "Pending - Customer Info",
+  "Sent to QC",
+  "Sent to Pre Check",
+  "Outstanding",
+  "Resolved",
+];
+const STATUS_COLOR = {
+  "New":"#2242C8","1st Contact":"#2242C8","2nd Contact":"#2242C8","Last Contact":"#FFB020",
+  "Pre-Withdrawal Sent":"#FF3B4E","Withdrawn":"#FF3B4E",
+  "Pending - Customer Info":"#FFB020","Sent to QC":"#8B7BFF","Sent to Pre Check":"#8B7BFF",
+  "Outstanding":"#FF8A3D","Resolved":"#2FD57C",
+};
+const OUTSTANDING_ITEMS = [
+  "Name", "Address", "NBH in ASIC", "Ekyc", "Manual KYC", "SMO Letter", "Trust deed", "ASIC to be updated", "Any 1-2",
+];
+
+const BOARD_PHASES = [
+  {name:"New", statuses:["New"]},
+  {name:"1st Contact", statuses:["1st Contact"]},
+  {name:"2nd Contact", statuses:["2nd Contact"]},
+  {name:"Last Contact", statuses:["Last Contact"]},
+  {name:"Pending - Customer Info", statuses:["Pending - Customer Info"]},
+  {name:"Outstanding", statuses:["Outstanding"]},
+  {name:"Sent to Pre Check", statuses:["Sent to Pre Check"]},
+  {name:"Sent to QC", statuses:["Sent to QC"]},
+  {name:"Pre-Withdrawal Sent", statuses:["Pre-Withdrawal Sent"]},
+  {name:"Resolved", statuses:["Resolved"]},
+  {name:"Withdrawn", statuses:["Withdrawn"]},
+];
+
+const CHECKLIST_ITEMS = [
+  "Customer identity verified (100 points)","ABN / ACN verified against registry","Entity structure confirmed",
+  "Trust deed reviewed (if applicable)","Directors verified","Shareholders / UBOs verified",
+  "Sanctions & PEP screening complete","Address confirmed","Source of funds documented","Pre-commencement docs on file"
+];
+const CALL_SCENARIOS = [
+  "Outbound — first contact","Outbound — follow up","Inbound — customer query","No answer",
+  "Failed authentication","eKYC consent","Fraud alert","SLA next steps"
+];
+const FRAUD_LIST = ["APEX SHELL TRADING","NOVA FRONT SERVICES","QUANTUM BRIDGE IMPORTS"];
+const SANCTIONS_LIST = ["CRIMSON TIDE LOGISTICS","EASTGATE MARITIME GROUP","OBSIDIAN CAPITAL PARTNERS"];
+const SEQ_KEYWORDS = ["SEQ","SPECIAL ENTITY QUEUE"];
+
+const CALL_SCRIPTS = {
+"Outbound — first contact":`OPENING
+"Good [morning/afternoon], may I speak with [Customer name]? My name is [SBOO] calling from NAB regarding the Know Your Customer review for [Entity name]."
+
+AUTHENTICATE
+• Confirm full name and date of birth
+• Confirm one of: registered address / ABN [ABN] / recent transaction
+
+PURPOSE
+"As part of our regulatory obligations we're required to refresh the identification records for [Entity name]. I need around 5–10 minutes to confirm details and let you know if anything is outstanding."
+
+CLOSE
+• Recap outstanding actions and channel (email / branch / eKYC link)
+• Confirm callback: "If we don't receive the documents by [date], I'll give you a call back."`,
+"Outbound — follow up":`"Hi [Customer name], it's [SBOO] from NAB following up on the KYC review for [Entity name]. Last time we spoke the outstanding items were: [list]. Have you had a chance to action these?"
+
+IF YES → verify receipt channel, thank and confirm next steps.
+IF NO  → re-explain consequence timeline (PEND schedule) and agree a firm date.`,
+"Inbound — customer query":`AUTHENTICATE FIRST — never discuss case detail before passing authentication.
+• Full name + DOB + one of address / ABN / BCN
+
+Then: "Thanks [Customer name], you're verified. How can I help with the review for [Entity name]?"
+Log the query verbatim in notes.`,
+"No answer":`No contact made.
+• Do NOT leave case detail on voicemail — name, bank, callback number only.
+• Log attempt. Contact stage auto-advances and next callback is scheduled per the call-timing rules.
+• After the last attempt, the case moves to Pre-Withdrawal Sent.`,
+"Failed authentication":`Caller could not pass authentication.
+"For security I'm unable to discuss this matter further on this call. You're welcome to visit a branch with ID, or call back on the number listed on nab.com.au."
+• Log FAILED AUTH. Flag if caller pressed for information — possible social engineering.`,
+"eKYC consent":`"NAB can verify your identity electronically using your name, date of birth and address against trusted external sources. Do I have your consent to do so?"
+• Capture explicit YES + timestamp in notes.
+• If consent declined → offer branch verification path.`,
+"Fraud alert":`⚠ Treat as HIGH RISK immediately.
+• Do not alert the caller to the fraud flag.
+• End call professionally, escalate to Fraud Ops with case ID [Case ID].
+• Set risk flag, add fraud note.`,
+"SLA next steps":`Explain the timeline plainly:
+"To keep the accounts operating without interruption we need the documents by [date]. If we can't complete the review, the bank may need to restrict or close the facilities — I want to help you avoid that."
+• Log commitment date as next callback.`
+};
+
+const TEMPLATES = [
+{cat:"Call notes", title:"Connected — verified & actions given", body:`Spoke with [Customer name] for [Entity name] (ABN [ABN]). Authentication passed. Explained KYC refresh requirements. Outstanding: {list documents}. Customer committed to provide by {date}. Callback set. — [SBOO]`},
+{cat:"Call notes", title:"No answer — attempt logged", body:`Outbound attempt to [Phone] for [Entity name] — no answer. Voicemail left with name and callback number only (no case detail). Next callback: {date}. — [SBOO]`},
+{cat:"Outstanding tasks", title:"Outstanding documents email", body:`Subject: Action required — identification review for [Entity name]
+
+Dear [Customer name],
+
+As part of NAB's Know Your Customer obligations we are completing a review of [Entity name] (ABN [ABN]). To finalise the review we require:
+
+1. {Document 1}
+2. {Document 2}
+
+Please provide these by {date} via your banker or reply to this email. If we do not receive the documents, restrictions may be applied to the facilities.
+
+Kind regards,
+[SBOO] — NAB KYC Operations`},
+{cat:"Trust deed", title:"Trust deed request", body:`Dear [Customer name],
+
+Our records indicate [Entity name] operates under a trust structure. To complete identification we require a certified copy of the full executed trust deed, including any variations and schedules naming the trustee(s) and beneficiaries.
+
+Please supply by {date}.
+
+[SBOO] — NAB KYC Operations`},
+{cat:"Pending", title:"2nd Contact reminder", body:`Subject: Reminder — documents outstanding for [Entity name]
+
+Dear [Customer name],
+
+Further to our previous contact, we have not yet received the outstanding identification documents for [Entity name] (ABN [ABN]). This is our second attempt under the bank's review schedule. Please respond by {date} to avoid escalation to pre-withdrawal.
+
+[SBOO] — NAB KYC Operations`},
+{cat:"Pending", title:"Pre-withdrawal notice", body:`Subject: FINAL NOTICE — identification review for [Entity name]
+
+Dear [Customer name],
+
+Despite multiple attempts we have been unable to complete the required identification review for [Entity name] (ABN [ABN]). Unless the outstanding documents are received by {closure date}, NAB will begin withdrawal of banking facilities in line with regulatory obligations.
+
+To resolve immediately, contact [SBOO] on the number provided or visit your nearest branch.
+
+NAB KYC Operations`},
+{cat:"Pending", title:"Withdrawal confirmation", body:`Subject: Facility withdrawal — [Entity name]
+
+Dear [Customer name],
+
+As the identification review for [Entity name] (ABN [ABN]) could not be completed by {closure date}, NAB has commenced withdrawal of banking facilities. If you believe this is in error, or can now provide the required documents, contact us urgently.
+
+NAB KYC Operations`},
+{cat:"eKYC", title:"eKYC consent confirmation", body:`Consent captured: [Customer name] of [Entity name] provided explicit verbal consent for electronic identity verification on {date/time}. Verified by [SBOO].`},
+{cat:"Fraud", title:"Fraud escalation note", body:`ESCALATION — [Case ID] / [Entity name] (ABN [ABN]) flagged for potential fraud indicators: {describe}. Caller NOT alerted. Referred to Fraud Ops {date}. — [SBOO]`},
+];
+
+/* ---------- state & storage ---------- */
+let S = { cases: [], me: "Shubham J", seq: 1 };
+let dirty = false, memOnly = false;
+
+function save(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(S));
+    setSaved(true);
+  }catch(e){
+    memOnly = true;
+    setSaved(false, "In-memory only");
+  }
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){ S = Object.assign({cases:[],me:"Shubham J",seq:1}, JSON.parse(raw)); }
+  }catch(e){ memOnly = true; }
+}
+function setSaved(ok, msg){
+  const d = document.getElementById("savedDot"), t = document.getElementById("savedTxt");
+  if(!d || !t) return;
+  d.classList.toggle("dirty", !ok);
+  t.textContent = msg || (ok ? "Saved" : "Unsaved");
+}
+
+/* cross-tab sync: if another page (in another tab) writes to the same key,
+   refresh in-memory state and re-render here too */
+window.addEventListener("storage", e=>{
+  if(e.key !== STORE_KEY || e.newValue == null) return;
+  try{ S = Object.assign({cases:[],me:"Shubham J",seq:1}, JSON.parse(e.newValue)); }catch(err){ return; }
+  if(typeof renderAll === "function") renderAll();
+});
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const uid = () => Math.random().toString(36).slice(2,9) + Date.now().toString(36);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const todayISO = () => new Date().toISOString().slice(0,10);
+const fmtD = iso => iso ? new Date(iso.length===10?iso+"T00:00:00":iso).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}) : "—";
+const fmtDT = iso => iso ? new Date(iso).toLocaleString("en-AU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "—";
+const daysBetween = (a,b) => Math.floor((new Date(b) - new Date(a)) / 86400000);
+const addDays = (iso, n) => { const d = new Date(iso.length===10?iso+"T00:00:00":iso); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+function toast(msg){
+  const t = $("toast"); if(!t) return;
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._tm); t._tm = setTimeout(()=>t.classList.remove("show"), 2400);
+}
+function copyText(txt){
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).catch(()=>fallbackCopy(txt)); }
+  else fallbackCopy(txt);
+}
+function fallbackCopy(txt){
+  const ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta);
+  ta.select(); try{ document.execCommand("copy"); }catch(e){} document.body.removeChild(ta);
+}
+function closeModal(id){ const el=$(id); if(el) el.classList.remove("open"); }
+
+/* ---------- external links ---------- */
+function abnLookupUrl(abn){ return "https://abr.business.gov.au/ABN/View/" + String(abn||"").replace(/\s/g,""); }
+function cnUrl(cn){ return "https://nabone.nab.com.au/v2/customer/" + String(cn||"").trim() + "/overview"; }
+function bcnUrl(bcn){ return "https://nabone.nab.com.au/v2/customer/" + String(bcn||"").trim() + "/overview"; }
+
+/* ---------- case model ---------- */
+function newCase(over={}){
+  return Object.assign({
+    id: uid(),
+    caseId: "KYC-" + String(S.seq).padStart(5,"0"),
+    entity:"", abn:"", acn:"", customer:"", dob:"", cn:"", bcn:"", phone:"", email:"",
+    status:"New",
+    tags:[], entered: todayISO(),
+    checklist:{}, documents:[], notes:[], calls:[], callbacks:[],
+    outstandingItems:[], // subset of OUTSTANDING_ITEMS when status === "Outstanding"
+    contactAttempts:0,   // count of contact attempts made (drives 1st/2nd/Last Contact progression)
+    pendHistory:[], timeline:[],
+    qcPassed:false, returned:false,
+    flags:{fraud:false, sanctions:false, pep:false, seq:false, mismatch:false, nbn:false, smo:false, complexEntity:false, missingPrecommencement:false},
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+  }, over);
+}
+function touch(c, event){
+  c.updatedAt = new Date().toISOString();
+  if(event) c.timeline.unshift({at:c.updatedAt, text:event});
+}
+function getCase(id){ return S.cases.find(c=>c.id===id); }
+function mutate(){ save(); if(typeof renderAll === "function") renderAll(); }
+
+/* ---------- type & risk ---------- */
+function isAssisted(c){ return /sbc/i.test(c.caseId||"") || /sbc/i.test(c.entity||""); }
+function isOnline(c){ return /ssoo/i.test(c.caseId||"") || /ssoo/i.test(c.entity||""); }
+function caseTypeLabel(c){ return isOnline(c) ? "Online" : isAssisted(c) ? "Assisted" : "Unclassified"; }
+
+function riskScoreOf(c){
+  const f = c.flags || {};
+  if(f.fraud || f.sanctions) return 100;
+  let score = 0;
+  const ckDone = CHECKLIST_ITEMS.filter(k=>c.checklist[k]).length;
+  const ckGap = 1 - (ckDone / CHECKLIST_ITEMS.length);
+  score += ckGap * 22;
+  const docsTotal = (c.documents||[]).length;
+  const docsUnverified = (c.documents||[]).filter(d=>d.status!=="Verified").length;
+  score += docsTotal ? (docsUnverified/docsTotal) * 13 : 6;
+  score += Math.min(3, c.contactAttempts||0) * 6.5;
+  if(f.mismatch) score += 8;
+  if(f.pep || f.seq) score += 10;
+  if(f.complexEntity || f.nbn || f.smo) score += 6;
+  if(f.missingPrecommencement) score += 8;
+  const age = ageingOf(c);
+  score += Math.min(35, (age/20) * 35);
+  const overdueCb = (c.callbacks||[]).some(cb => !cb.done && new Date(cb.at) < new Date());
+  if(overdueCb) score += 10;
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+function riskOf(c){
+  const s = riskScoreOf(c);
+  if(s >= 62) return "High";
+  if(s >= 32) return "Medium";
+  return "Low";
+}
+function riskOrb(level, lg){
+  const cls = level==="High"?"orb-hi":level==="Medium"?"orb-med":"orb-low";
+  return `<span class="orb ${cls} ${lg?'orb-lg':''}" title="${level} risk — auto-calculated from pendency and ageing"></span>`;
+}
+function healthOf(c){
+  let pts = 0, max = 0;
+  const add = (cond, w) => { max += w; if(cond) pts += w; };
+  add(!!c.caseId, 5);
+  add(!!c.entity, 10);
+  add(/^\d{11}$/.test((c.abn||"").replace(/\s/g,"")), 10);
+  add(!!c.phone || !!c.email, 10);
+  add((c.documents||[]).length>0 && c.documents.every(d=>d.status==="Verified"), 15);
+  const ck = CHECKLIST_ITEMS.filter(k=>c.checklist[k]).length;
+  add(ck === CHECKLIST_ITEMS.length, 15);
+  max += 10; pts += Math.round(10 * ck / CHECKLIST_ITEMS.length);
+  const overdueCb = (c.callbacks||[]).some(cb => !cb.done && new Date(cb.at) < new Date());
+  add(!overdueCb, 10);
+  add(riskOf(c)!=="High", 10);
+  add(c.status==="Resolved", 3);
+  add(!c.returned, 2);
+  return Math.max(0, Math.min(100, Math.round(100 * pts / max)));
+}
+function healthBar(h){
+  return `<span class="health"><span class="hbar"><i style="width:${h}%"></i></span><span class="hpct">${h}%</span></span>`;
+}
+function statusPill(s){
+  const color = STATUS_COLOR[s] || "#5B6572";
+  return `<span class="pill s-pill" style="background:${color}22;border-color:${color}66;color:${color}">${esc(s)}</span>`;
+}
+function ageingOf(c){ return Math.max(0, daysBetween(c.entered, todayISO())); }
+function isOpen(c){ return !["Resolved","Withdrawn"].includes(c.status); }
+function isComplete(c){ return c.status==="Resolved"; }
+
+/* ---------- PEND / call-timing engine ----------
+   Rule set as specified:
+   1. First call: ASAP (as soon as the case enters / is picked up).
+   2. If unanswered, retry after 4 business hours (bank hours, Mon–Fri, up to 7pm AEST).
+      If placing +4h would land after 7pm, roll to 9am the next business day.
+   3. After the "2nd Contact" attempt also goes unanswered, the last attempt is
+      scheduled for the next business day ("Last Contact").
+   4. If the last attempt also fails, a pre-withdrawal notice goes out immediately
+      ("Pre-Withdrawal Sent").
+   ---------------------------------------------------------------------- */
+const BUSINESS_START_HOUR = 9, BUSINESS_END_HOUR = 19; // 9am–7pm AEST
+function isBusinessDay(d){ const w = d.getDay(); return w!==0 && w!==6; }
+function nextBusinessDay9am(from){
+  const d = new Date(from);
+  d.setDate(d.getDate()+1); d.setHours(BUSINESS_START_HOUR,0,0,0);
+  while(!isBusinessDay(d)) d.setDate(d.getDate()+1);
+  return d;
+}
+function plusBusinessHours(from, hours){
+  let d = new Date(from);
+  if(!isBusinessDay(d) || d.getHours() >= BUSINESS_END_HOUR){
+    return nextBusinessDay9am(d);
+  }
+  if(d.getHours() < BUSINESS_START_HOUR) d.setHours(BUSINESS_START_HOUR,0,0,0);
+  d = new Date(d.getTime() + hours*3600000);
+  if(!isBusinessDay(d) || d.getHours() >= BUSINESS_END_HOUR || (d.getHours()===BUSINESS_END_HOUR && d.getMinutes()>0)){
+    return nextBusinessDay9am(from);
+  }
+  if(d.getHours() < BUSINESS_START_HOUR) d.setHours(BUSINESS_START_HOUR,0,0,0);
+  return d;
+}
+/* returns the next scheduled contact stage + timestamp given the case's current
+   contactAttempts count. Call this to decide what to schedule after a no-answer. */
+function nextContactPlan(c, fromDate){
+  const from = fromDate || new Date();
+  const n = c.contactAttempts || 0;
+  if(n===0) return {stage:"1st Contact", at: from}; // ASAP
+  if(n===1) return {stage:"2nd Contact", at: plusBusinessHours(from, 4)};
+  if(n===2) return {stage:"Last Contact", at: nextBusinessDay9am(from)};
+  return {stage:"Pre-Withdrawal Sent", at: from}; // immediate
+}
+
+/* ---------- next best action ---------- */
+function nextActionOf(c){
+  const r = riskOf(c);
+  if(c.status==="Withdrawn") return "Case withdrawn — archive";
+  if(c.status==="Resolved") return "No action — resolved";
+  if(c.flags.fraud) return "Withdraw case";
+  if(c.status==="Outstanding") return "Chase: " + (c.outstandingItems||[]).join(", ") || "Chase outstanding items";
+  if(c.flags.mismatch) return "Resolve discrepancy";
+  const docsMissing = (c.documents||[]).length===0 || c.documents.some(d=>d.status!=="Verified");
+  if(docsMissing && !["Sent to Pre Check","Sent to QC"].includes(c.status)) return "Request documents";
+  const ckDone = CHECKLIST_ITEMS.every(k=>c.checklist[k]);
+  if(ckDone && !["Sent to Pre Check","Sent to QC","Resolved"].includes(c.status)) return "Move to Pre Check";
+  if(c.status==="Sent to Pre Check") return "Send to QC";
+  if(c.status==="Sent to QC") return c.qcPassed ? "Mark resolved" : "Complete QC review";
+  const plan = nextContactPlan(c);
+  if(c.status==="New" || c.status==="1st Contact" || c.status==="2nd Contact" || c.status==="Last Contact"){
+    return "Call customer — " + plan.stage + " · " + fmtDT(plan.at.toISOString());
+  }
+  const dueCb = (c.callbacks||[]).find(cb=>!cb.done);
+  if(dueCb) return "Call customer — " + fmtDT(dueCb.at);
+  return "Progress checklist";
+}
+
+function sentToPreCheck(c){ return c.status==="Sent to Pre Check" || c.status==="Sent to QC" || c.timeline.some(t=>/pre check/i.test(t.text)); }
+function sentToQC(c){ return c.status==="Sent to QC" || c.timeline.some(t=>/→ Sent to QC|sent to qc/i.test(t.text)); }
+
+/* ---------- dashboard segment helpers ---------- */
+function scheduledToday(c){ return (c.callbacks||[]).some(cb=>!cb.done && cb.at.slice(0,10)===todayISO()); }
+function firstConnectDue(c){ return isOpen(c) && (c.calls||[]).length===0; }
+function highAgeing(c){ return isOpen(c) && ageingOf(c) > 10; }
+function unworked(c){ return isOpen(c) && daysBetween(c.updatedAt.slice(0,10), todayISO()) >= 2; }
+function notInFlow(c){ return isOpen(c) && !sentToPreCheck(c) && !sentToQC(c); }
+function pendingWithdrawal(c){ return c.status==="Pre-Withdrawal Sent"; }
+function inNewStatus(c){ return c.status==="New"; }
+function inPreCheckStatus(c){ return c.status==="Sent to Pre Check"; }
+function inQCStatus(c){ return c.status==="Sent to QC"; }
+/* =====================================================================
+   FLEXIBLE IMPORT — accepts .xlsx/.xls/.xlsm/.csv/.tsv/.txt in essentially
+   any column layout. Headers are matched fuzzily (case/space/punctuation
+   insensitive, partial contains-match) against a synonym table, so a sheet
+   titled "Case Reference", "Case_ID", "Ref No" etc. all map to caseId.
+   ===================================================================== */
+
+/* synonym groups — first match wins; order matters (more specific first) */
+const IMPORT_FIELD_SYNONYMS = [
+  {field:"caseId", keys:["case id","caseid","case ref","case reference","reference","ref no","ref","id"]},
+  {field:"entity", keys:["entity name","entityname","entity","company name","business name","company","organisation","organization"]},
+  {field:"abn", keys:["abn","australian business number"]},
+  {field:"acn", keys:["acn","australian company number"]},
+  {field:"customer", keys:["customer name","customer","contact name","contact","name","account holder"]},
+  {field:"dob", keys:["date of birth","dob","birth date","birthdate"]},
+  {field:"cn", keys:["cn","customer number"]},
+  {field:"bcn", keys:["bcn","business customer number"]},
+  {field:"phone", keys:["phone","mobile","telephone","contact number","phone number"]},
+  {field:"email", keys:["email","e-mail","email address"]},
+  {field:"status", keys:["status","stage","case status"]},
+  {field:"entered", keys:["case entered","entered date","entered","date entered","created","created date","start date"]},
+  {field:"tags", keys:["tags","labels","categories"]},
+];
+
+function normalizeHeader(h){
+  return String(h||"").trim().toLowerCase().replace(/[_\-.]+/g," ").replace(/\s+/g," ");
+}
+function matchHeader(h){
+  const norm = normalizeHeader(h);
+  if(!norm) return null;
+  // exact match first
+  for(const grp of IMPORT_FIELD_SYNONYMS){
+    if(grp.keys.includes(norm)) return grp.field;
+  }
+  // partial/contains match as fallback
+  for(const grp of IMPORT_FIELD_SYNONYMS){
+    if(grp.keys.some(k => norm.includes(k) || k.includes(norm))) return grp.field;
+  }
+  return null;
+}
+
+function handleImport(file){
+  if(!file) return;
+  if(!window.XLSX) return toast("Import engine still loading — try again in a moment");
+  $("ioStatus").innerHTML = `<span class="muted">Reading ${esc(file.name)}…</span>`;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const wb = XLSX.read(e.target.result, {type:"array", cellDates:true});
+      let imported = 0, skipped = 0, previewRows = [];
+      wb.SheetNames.forEach(sn=>{
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header:1, defval:""});
+        if(!rows.length) return;
+        // auto-detect header row: first row where ≥2 cells map to known fields
+        let hIdx = rows.findIndex(r => r.filter(c=>matchHeader(c)).length >= 2);
+        if(hIdx === -1){ skipped += rows.length; return; }
+        const headers = rows[hIdx].map(h=>matchHeader(h));
+        rows.slice(hIdx+1).forEach(r=>{
+          if(!r.some(c=>String(c).trim())) return;
+          const rec = {};
+          headers.forEach((h,i)=>{ if(h && r[i]!==undefined && r[i]!=="") rec[h] = r[i]; });
+          if(!rec.entity && !rec.customer && !rec.caseId){ skipped++; return; }
+          const c = newCase(); S.seq++;
+          if(rec.caseId) c.caseId = String(rec.caseId).trim();
+          c.entity = String(rec.entity||"").trim();
+          c.abn = String(rec.abn||"").replace(/\D/g,"");
+          c.acn = String(rec.acn||"").replace(/\D/g,"");
+          c.customer = String(rec.customer||"").trim();
+          if(rec.dob){ const dd = rec.dob instanceof Date ? rec.dob : new Date(rec.dob); if(!isNaN(dd)) c.dob = dd.toISOString().slice(0,10); }
+          c.cn = String(rec.cn||"").trim(); c.bcn = String(rec.bcn||"").trim();
+          c.phone = String(rec.phone||"").trim(); c.email = String(rec.email||"").trim();
+          const st = String(rec.status||"").trim();
+          c.status = STATUSES.find(s=>s.toLowerCase()===st.toLowerCase()) || "New";
+          if(rec.entered){
+            const d = rec.entered instanceof Date ? rec.entered : new Date(rec.entered);
+            if(!isNaN(d)) c.entered = d.toISOString().slice(0,10);
+          }
+          if(rec.tags) c.tags = String(rec.tags).split(/[,;|]/).map(t=>t.trim()).filter(Boolean);
+          touch(c, "Imported from "+file.name+" ("+sn+")");
+          S.cases.push(c);
+          imported++;
+          if(previewRows.length<12) previewRows.push(c);
+        });
+      });
+      $("ioStatus").innerHTML = `
+        <div class="flagbox flag-ok">✔ Imported: <b>${imported}</b></div>
+        ${skipped?`<div class="flagbox flag-amber">⚠ Skipped: <b>${skipped}</b> (no mappable header row or empty identity fields)</div>`:""}`;
+      if(previewRows.length){
+        $("ioPreviewWrap").style.display = "block";
+        $("ioPrevHead").innerHTML = `<tr>${["Case ID","Entity","ABN","Customer","Status","Entered"].map(h=>`<th>${h}</th>`).join("")}</tr>`;
+        $("ioPrevBody").innerHTML = previewRows.map(c=>`<tr>
+          <td class="cid">${esc(c.caseId)}</td><td>${esc(c.entity)}</td><td class="mono">${esc(c.abn)}</td>
+          <td>${esc(c.customer)}</td><td>${esc(c.status)}</td><td class="mono">${c.entered}</td></tr>`).join("");
+      }
+      mutate(); toast(imported+" case(s) imported");
+    }catch(err){
+      $("ioStatus").innerHTML = `<div class="flagbox flag-red">Import failed: ${esc(err.message||err)}</div>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function caseRowsForExport(){
+  return S.cases.map(c=>({
+    "Case ID":c.caseId, "Entity Name":c.entity, "ABN":c.abn, "ACN":c.acn,
+    "Customer":c.customer, "DOB":c.dob, "CN":c.cn, "BCN":c.bcn, "Phone":c.phone, "Email":c.email,
+    "Type":caseTypeLabel(c), "Risk":riskOf(c), "Status":c.status, "Entered":c.entered,
+    "Ageing (d)":ageingOf(c), "Health %":healthOf(c),
+    "Next Action":nextActionOf(c), "Contact Attempts":c.contactAttempts||0,
+    "Calls":(c.calls||[]).length, "Tags":(c.tags||[]).join("; "),
+  }));
+}
+function exportXLSX(){
+  if(!S.cases.length) return toast("Nothing to export");
+  if(!window.XLSX) return toast("Export engine still loading — try again in a moment");
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(caseRowsForExport()), "Cases");
+  const callRows = S.cases.flatMap(c=>(c.calls||[]).map(k=>({
+    "Case ID":c.caseId, "Entity":c.entity, "Attempt":k.attempt, "Scenario":k.scenario,
+    "Outcome":k.outcome, "Duration":k.duration, "Notes":k.notes, "Timestamp":k.at,
+    "Opportunity":k.opportunityConfirmed?"Yes":"No", "Email sent":k.emailSent?"Yes":"No"})));
+  if(callRows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(callRows), "Call Log");
+  const noteRows = S.cases.flatMap(c=>(c.notes||[]).map(n=>({"Case ID":c.caseId,"When":n.at,"By":n.by,"Situation":n.situation||"","Note":n.text})));
+  if(noteRows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(noteRows), "Notes");
+  XLSX.writeFile(wb, `NAB_KYC_Case_Book_${todayISO()}.xlsx`);
+}
+function exportCSV(){
+  if(!S.cases.length) return toast("Nothing to export");
+  const ws = XLSX.utils.json_to_sheet(caseRowsForExport());
+  const csv = XLSX.utils.sheet_to_csv(ws);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download = `NAB_KYC_Case_Book_${todayISO()}.csv`; a.click(); URL.revokeObjectURL(a.href);
+}
+function exportJSON(){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:"application/json"}));
+  a.download = `NAB_KYC_Backup_${todayISO()}.json`; a.click(); URL.revokeObjectURL(a.href);
+}
+
+
+/* ---------- duration filter ---------- */
+function durationRange(){
+  const mode = $("durSelect").value;
+  if(mode==="month"){
+    const v = $("durMonth").value;
+    if(!v) return null;
+    const from = v+"-01";
+    const to = new Date(Number(v.slice(0,4)), Number(v.slice(5,7)), 0).toISOString().slice(0,10);
+    return {from, to};
+  }
+  if(mode==="custom"){
+    const from = $("durFrom").value, to = $("durTo").value;
+    if(!from || !to) return null;
+    return {from, to};
+  }
+  return null;
+}
+function inRange(c, range){ if(!range) return true; return c.entered >= range.from && c.entered <= range.to; }
+function durationCases(){ const range = durationRange(); return range ? S.cases.filter(c=>inRange(c,range)) : S.cases; }
+function onDurationChange(){
+  const mode = $("durSelect").value;
+  $("durMonth").style.display = mode==="month" ? "" : "none";
+  $("durFrom").style.display = mode==="custom" ? "" : "none";
+  $("durToLbl").style.display = mode==="custom" ? "" : "none";
+  $("durTo").style.display = mode==="custom" ? "" : "none";
+  if(mode==="month" && !$("durMonth").value) $("durMonth").value = todayISO().slice(0,7);
+  if(mode==="custom" && !$("durFrom").value){ $("durFrom").value = addDays(todayISO(),-30); $("durTo").value = todayISO(); }
+  renderAll();
+}
+
+/* ---------- morning brief ---------- */
+function renderMorningBrief(){
+  const hour = new Date().getHours();
+  const greeting = hour<12 ? "Good morning" : hour<17 ? "Good afternoon" : "Good evening";
+  $("morningGreeting").textContent = greeting + ", " + S.me.split(" ")[0];
+  $("morningDate").textContent = new Date().toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
+
+  const today = S.cases.filter(scheduledToday);
+  const newCases = S.cases.filter(inNewStatus);
+  const preCheckCases = S.cases.filter(inPreCheckStatus);
+  const qcCases = S.cases.filter(inQCStatus);
+  const overdueCbs = S.cases.flatMap(c=>(c.callbacks||[]).filter(cb=>!cb.done && new Date(cb.at)<new Date()));
+
+  const items = [
+    {lbl:"Calls due today", num:today.length, go:()=>openCallbackList("Scheduled calls — today", today.flatMap(c=>(c.callbacks||[]).filter(cb=>!cb.done&&cb.at.slice(0,10)===todayISO()).map(cb=>({c,cb}))))},
+    {lbl:"Overdue calls", num:overdueCbs.length, go:()=>openCallbackList("Overdue calls", S.cases.flatMap(c=>(c.callbacks||[]).filter(cb=>!cb.done && new Date(cb.at)<new Date()).map(cb=>({c,cb}))))},
+    {lbl:"New — needs assessment", num:newCases.length, go:()=>openCaseList("New cases", newCases)},
+    {lbl:"Sitting in Pre Check", num:preCheckCases.length, go:()=>openCaseList("Sent to Pre Check", preCheckCases)},
+    {lbl:"Sitting in QC", num:qcCases.length, go:()=>openCaseList("Sent to QC", qcCases)},
+  ];
+  $("morningGrid").innerHTML = items.map((it,i)=>`<div class="mb-item" id="mb-${i}"><div class="mb-num">${it.num}</div><div class="mb-lbl">${esc(it.lbl)}</div></div>`).join("");
+  items.forEach((it,i)=>{ $("mb-"+i).onclick = it.go; });
+}
+
+/* ---------- generic floating case-list window ---------- */
+function openCaseList(title, list){
+  $("listModalTitle").textContent = `${title} · ${list.length}`;
+  $("listModalBody").innerHTML = list.length ? list.map(c=>`
+    <div class="mini-row" onclick="closeModal('listModal');go('work','${c.id}')">
+      ${riskOrb(riskOf(c))}
+      <div class="grow">
+        <div class="nm">${esc(c.customer||c.entity||"—")}</div>
+        <div class="mt">${esc(c.caseId)} · ${esc(caseTypeLabel(c))} entity${c.entity?" — "+esc(c.entity):""}</div>
+      </div>
+      <div style="text-align:right">
+        ${statusPill(c.status)}
+        <div class="mt">updated ${fmtDT(c.updatedAt)}</div>
+      </div>
+    </div>`).join("") : `<div class="empty">No cases in this segment.</div>`;
+  $("listModal").classList.add("open");
+}
+let lastCallbackListArgs = null;
+function openCallbackList(title, items){
+  lastCallbackListArgs = {title, items};
+  $("listModalTitle").textContent = `${title} · ${items.length}`;
+  $("listModalBody").innerHTML = items.length ? items.map(({c,cb})=>`
+    <div class="mini-row" style="align-items:flex-start" onclick="go('work','${c.id}')">
+      ${riskOrb(riskOf(c))}
+      <div class="grow">
+        <div class="nm">${esc(c.customer||"—")} <span class="muted" style="font-weight:400">· DOB ${c.dob?fmtD(c.dob):"—"}</span></div>
+        <div class="mt">${esc(c.phone||"no phone")} · ${esc(cb.reason||"callback")}</div>
+        <div class="mt">${esc(c.caseId)} · ${esc(caseTypeLabel(c))} entity${c.entity?" — "+esc(c.entity):""}</div>
+      </div>
+      <button class="bell-btn ${cb.notified&&cb.notified.armed?"armed":""}" title="Set reminders"
+        onclick="event.stopPropagation();armCallbackReminders('${c.id}','${cb.id}').then(()=>{ if(lastCallbackListArgs) openCallbackList(lastCallbackListArgs.title, lastCallbackListArgs.items); })">🔔</button>
+      <div class="mt" style="color:${new Date(cb.at)<new Date()?'var(--red)':'var(--amber)'};white-space:nowrap">${fmtDT(cb.at)}</div>
+    </div>`).join("") : `<div class="empty">No callbacks in this segment.</div>`;
+  $("listModal").classList.add("open");
+}
+
+/* ---------- date markers ---------- */
+function dayOfMonthMarker(iso){
+  const d = new Date(iso+"T00:00:00");
+  const dom = d.getDate();
+  const lastDay = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  if(dom===1 || dom===7 || dom===15 || dom===22 || dom===lastDay) return String(dom);
+  return "";
+}
+function monthRangeLabel(days){
+  if(!days.length) return "";
+  const first = new Date(days[0]+"T00:00:00"), last = new Date(days[days.length-1]+"T00:00:00");
+  const fmt = d => d.toLocaleDateString("en-AU",{month:"long"});
+  if(first.getMonth()===last.getMonth() && first.getFullYear()===last.getFullYear()) return `${fmt(first)} ${first.getFullYear()}`;
+  if(first.getFullYear()===last.getFullYear()) return `${fmt(first)} – ${fmt(last)} ${first.getFullYear()}`;
+  return `${fmt(first)} ${first.getFullYear()} – ${fmt(last)} ${last.getFullYear()}`;
+}
+function pickedPerDay(list){
+  const cs = list || S.cases;
+  const mode = $("weekChartMode") ? $("weekChartMode").value : "month";
+  let from, to;
+  if(mode==="custom"){
+    const range = durationRange();
+    if(range){ from = range.from; to = range.to; } else { from = addDays(todayISO(), -29); to = todayISO(); }
+  } else { from = addDays(todayISO(), -29); to = todayISO(); }
+  const span = Math.max(1, daysBetween(from, to));
+  const bucketByWeek = span > 45;
+  const days = [];
+  for(let i=0;i<=span;i++) days.push(addDays(from, i));
+  if(!bucketByWeek) return { days, counts: days.map(d=>cs.filter(c=>c.entered===d).length), mode:"day" };
+  const weeks = [];
+  for(let i=0;i<=span;i+=7) weeks.push(addDays(from,i));
+  return { days: weeks, counts: weeks.map(w=>{ const wEnd=addDays(w,6); return cs.filter(c=>c.entered>=w && c.entered<=wEnd).length; }), mode:"week" };
+}
+
+/* ---------- dashboard render ---------- */
+function renderDashboard(){
+  renderMorningBrief();
+  const cs = durationCases();
+  const range = durationRange();
+  $("durSummary").textContent = range ? `${cs.length} cases · ${fmtD(range.from)} – ${fmtD(range.to)}` : `${cs.length} cases · all time`;
+
+  const total = cs.length;
+  const assisted = cs.filter(isAssisted).length;
+  const online = cs.filter(isOnline).length;
+  const open = cs.filter(isOpen).length;
+  const complete = cs.filter(isComplete).length;
+  const preCheck = cs.filter(inPreCheckStatus).length;
+  const qc = cs.filter(inQCStatus).length;
+  const today = cs.filter(scheduledToday);
+  const fcDue = cs.filter(firstConnectDue);
+  const withdrawal = cs.filter(pendingWithdrawal);
+  const missedCbs = cs.flatMap(c=>(c.callbacks||[]).filter(cb=>!cb.done && new Date(cb.at)<new Date()).map(cb=>({c,cb})));
+
+  const kpis = [
+    {lbl:"Total cases", num:total, sub:"all cases punched", color:"var(--cyan)", journey:true},
+    {lbl:"Open", num:open, sub:complete+" resolved", color:"var(--green)",
+      click:()=>openCaseList("Open cases", cs.filter(isOpen))},
+    {lbl:"Sent to Pre Check", num:preCheck, sub:"current status", color:"var(--violet)",
+      click:()=>openCaseList("Sent to Pre Check", cs.filter(inPreCheckStatus))},
+    {lbl:"Sent to QC", num:qc, sub:"current status", color:"var(--violet)",
+      click:()=>openCaseList("Sent to QC", cs.filter(inQCStatus))},
+    {lbl:"First connect due", num:fcDue.length, sub:"no call logged yet", color:"var(--cyan)",
+      click:()=>openCaseList("First connect due", fcDue)},
+    {lbl:"Scheduled calls today", num:today.length, sub:fmtD(todayISO()), color:"var(--amber)",
+      click:()=>openCallbackList("Scheduled calls — today", today.flatMap(c=>(c.callbacks||[]).filter(cb=>!cb.done&&cb.at.slice(0,10)===todayISO()).map(cb=>({c,cb}))))},
+    {lbl:"Overdue calls missed", num:missedCbs.length, sub:"past scheduled time", color:"var(--red)",
+      click:()=>openCallbackList("Overdue calls missed", missedCbs)},
+    {lbl:"Pending withdrawal", num:withdrawal.length, sub:"pre-withdrawal sent", color:"var(--red)",
+      click:()=>openCaseList("Pre-Withdrawal Sent", withdrawal)},
+  ];
+  $("kpiGrid").innerHTML = kpis.map((k,i)=>`
+    <div class="kpi clickable" id="kpi-${i}">
+      <div class="edge" style="background:${k.color}"></div>
+      <div class="lbl">${k.lbl}</div>
+      <div class="num">${k.num}</div>
+      <div class="sub">${esc(k.sub)}</div>
+    </div>`).join("");
+  kpis.forEach((k,i)=>{
+    const el = $("kpi-"+i);
+    if(k.journey){
+      el.addEventListener("mouseenter", e=>showJourneyPop(e, assisted, online));
+      el.addEventListener("mousemove", positionJourneyPop);
+      el.addEventListener("mouseleave", hideJourneyPop);
+    } else { el.onclick = k.click; }
+  });
+
+  const wk = pickedPerDay(cs);
+  const wkLabels = wk.days.map(d=>dayOfMonthMarker(d));
+  drawBars($("chWeek"), wkLabels, wk.counts, ["#3ED2E8"], {subtitle: monthRangeLabel(wk.days)});
+  const notFlow = cs.filter(notInFlow).length;
+  drawDonut($("chBook"), ["Resolved","Open · not in flow","In Pre Check / QC"], [complete, notFlow, preCheck+qc], ["#2FD57C","#FF3B4E","#8B7BFF"]);
+
+  const pendingCbs = cs.flatMap(c=>(c.callbacks||[]).filter(cb=>!cb.done).map(cb=>({c,cb})));
+  const now = new Date();
+  const overdue = pendingCbs.filter(x=>new Date(x.cb.at)<now).sort((a,b)=>new Date(a.cb.at)-new Date(b.cb.at));
+  const upcoming = pendingCbs.filter(x=>new Date(x.cb.at)>=now).sort((a,b)=>new Date(a.cb.at)-new Date(b.cb.at));
+  $("cbCountLbl").textContent = pendingCbs.length + " open";
+  const cbRow = ({c,cb}) => {
+    const isPend = ["1st Contact","2nd Contact","Last Contact"].includes(c.status);
+    const attemptBadge = isPend ? `<span class="tag" style="font-size:10px;color:#FFC95C;border-color:rgba(255,176,32,.4);background:rgba(255,176,32,.1)">Attempt ${c.contactAttempts||0} · ${esc(c.status)}</span>` : "";
+    return `<div class="mini-row" style="align-items:flex-start" onclick="go('work','${c.id}')">
+      ${riskOrb(riskOf(c))}
+      <div class="grow">
+        <div class="nm">${esc(c.customer||"—")} <span class="muted" style="font-weight:400">· DOB ${c.dob?fmtD(c.dob):"—"}</span></div>
+        <div class="mt" style="font-family:'JetBrains Mono',monospace;color:var(--ink);font-weight:600">📞 ${esc(c.phone||"no phone")}</div>
+        <div class="mt">${esc(cb.reason||"callback")}</div>
+        <div class="mt">${esc(c.caseId)} · ${esc(caseTypeLabel(c))} entity${c.entity?" — "+esc(c.entity):""}</div>
+        ${attemptBadge ? `<div style="margin-top:4px">${attemptBadge}</div>` : ""}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:none" onclick="event.stopPropagation()">
+        <button class="bell-btn ${cb.notified&&cb.notified.armed?"armed":""}" title="${cb.notified&&cb.notified.armed?"Reminders armed":"Set reminders"}"
+          onclick="armCallbackReminders('${c.id}','${cb.id}')">🔔</button>
+        <label class="cl-check-wrap" title="Mark pre-call check done">
+          <input type="checkbox" ${cb.preCallDone?"checked":""} onchange="togglePreCall('${c.id}','${cb.id}')">
+          <span class="cl-check cl-check-blue ${cb.preCallDone?"done":""}" style="width:16px;height:16px;font-size:10px">${cb.preCallDone?"✔":""}</span>
+          <span class="cl-check-lbl">Pre call</span>
+        </label>
+      </div>
+      <div class="mt" style="color:${new Date(cb.at)<now?'var(--red)':'var(--amber)'};white-space:nowrap">${fmtDT(cb.at)}</div>
+    </div>`;
+  };
+  $("dashCbOverdue").innerHTML = overdue.length ? overdue.slice(0,5).map(cbRow).join("") : `<div class="empty">No overdue callbacks.</div>`;
+  $("dashCbUpcoming").innerHTML = upcoming.length ? upcoming.slice(0,5).map(cbRow).join("") : `<div class="empty">No upcoming callbacks.</div>`;
+
+  const ha = cs.filter(highAgeing).sort((a,b)=>ageingOf(b)-ageingOf(a));
+  $("dashHighAgeing").innerHTML = ha.length ? ha.slice(0,6).map(c=>`
+    <div class="mini-row" onclick="go('work','${c.id}')">
+      ${riskOrb(riskOf(c))}
+      <div class="grow"><div class="nm">${esc(c.customer||c.entity||c.caseId)}</div>
+      <div class="mt">${esc(c.caseId)} · ${esc(caseTypeLabel(c))}</div>
+      <div class="mt" style="color:#FFC95C">Pending: ${esc(nextActionOf(c))}</div></div>
+      <div class="mt" style="color:var(--red)">${ageingOf(c)}d</div>
+    </div>`).join("") : `<div class="empty">No cases older than 10 days.</div>`;
+
+  const uw = cs.filter(unworked).sort((a,b)=>a.updatedAt.localeCompare(b.updatedAt));
+  $("dashUnworked").innerHTML = uw.length ? uw.slice(0,6).map(c=>`
+    <div class="mini-row" onclick="go('work','${c.id}')">
+      ${riskOrb(riskOf(c))}
+      <div class="grow"><div class="nm">${esc(c.customer||c.entity||c.caseId)}</div>
+      <div class="mt">${esc(c.caseId)} · ${esc(caseTypeLabel(c))}</div></div>
+      <div class="mt" style="color:var(--amber)">${daysBetween(c.updatedAt.slice(0,10),todayISO())}d idle</div>
+    </div>`).join("") : `<div class="empty">Everything open has been touched in the last 2 days.</div>`;
+
+  const allCalls = S.cases.flatMap(c => (c.calls||[]).map(k => ({c, k}))).sort((a,b) => b.k.at.localeCompare(a.k.at)).slice(0, 40);
+  $("dashCallLog").innerHTML = allCalls.length ? allCalls.map(({c,k})=>{
+    const state = k.opportunityConfirmed ? "green" : (k.answered ? "yellow" : "red");
+    const dotClass = state==="green" ? "cl-green" : state==="yellow" ? "cl-yellow" : "cl-red";
+    const unanswered = !k.answered;
+    return `<div class="cl-row">
+      <i class="cl-dot ${dotClass}"></i>
+      <div class="grow" onclick="go('work','${c.id}')" style="cursor:pointer">
+        <div class="cl-title">${esc(c.customer||c.entity||c.caseId)} <span class="muted" style="font-weight:400">· ${esc(k.outcome)}</span></div>
+        <div class="cl-meta">${esc(c.caseId)} · ${esc(caseTypeLabel(c))} · ${fmtDT(k.at)} · ${k.duration}</div>
+        ${k.notes ? `<div class="cl-meta" style="margin-top:2px;color:var(--dim)">📝 ${esc(k.notes)}</div>` : ""}
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:3px">
+          ${k.opportunityConfirmed ? `<span class="cl-opp-note">✔ opportunity created</span>` : ""}
+          ${k.emailSent ? `<span class="cl-opp-note" style="color:#7BE3F2">✔ email sent</span>` : ""}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex:none">
+        <label class="cl-check-wrap" title="Confirm opportunity created" onclick="event.stopPropagation()">
+          <input type="checkbox" ${k.opportunityConfirmed?"checked":""} onchange="toggleOpportunity('${c.id}','${k.id}')">
+          <span class="cl-check ${k.opportunityConfirmed?"done":""}">${k.opportunityConfirmed?"✔":""}</span>
+          <span class="cl-check-lbl">Opportunity</span>
+        </label>
+        ${unanswered ? `<label class="cl-check-wrap" title="Confirm follow-up email sent" onclick="event.stopPropagation()">
+          <input type="checkbox" ${k.emailSent?"checked":""} onchange="toggleCallEmailSent('${c.id}','${k.id}')">
+          <span class="cl-check cl-check-blue ${k.emailSent?"done":""}">${k.emailSent?"✔":""}</span>
+          <span class="cl-check-lbl">Email</span>
+        </label>` : ""}
+      </div>
+    </div>`;
+  }).join("") : `<div class="empty">No calls logged yet.</div>`;
+}
+
+function showJourneyPop(e, assisted, online){
+  const pop = $("journeyPop");
+  pop.innerHTML = `<div style="margin-bottom:4px"><b style="color:var(--cyan)">Assisted</b> (sbc) — ${assisted}</div>
+    <div><b style="color:var(--violet)">Online</b> (ssoo) — ${online}</div>`;
+  pop.style.display = "block";
+  positionJourneyPop(e);
+}
+function positionJourneyPop(e){
+  const pop = $("journeyPop");
+  pop.style.left = (e.clientX + 16) + "px";
+  pop.style.top = (e.clientY + 16) + "px";
+}
+function hideJourneyPop(){ $("journeyPop").style.display = "none"; }
+
+function togglePreCall(caseId, cbId){
+  const c = getCase(caseId); if(!c) return;
+  const cb = (c.callbacks||[]).find(x=>x.id===cbId); if(!cb) return;
+  cb.preCallDone = !cb.preCallDone;
+  touch(c, cb.preCallDone ? "Pre-call check completed for callback" : "Pre-call check unmarked");
+  if(cb.preCallDone) toast("Pre-call check done for "+c.caseId);
+  mutate();
+}
+function toggleOpportunity(caseId, callId){
+  const c = getCase(caseId); if(!c) return;
+  const k = (c.calls||[]).find(x=>x.id===callId); if(!k) return;
+  k.opportunityConfirmed = !k.opportunityConfirmed;
+  touch(c, k.opportunityConfirmed ? "Opportunity confirmed from call" : "Opportunity confirmation cleared");
+  if(k.opportunityConfirmed) toast("Opportunity created for "+c.caseId);
+  mutate();
+}
+function toggleCallEmailSent(caseId, callId){
+  const c = getCase(caseId); if(!c) return;
+  const k = (c.calls||[]).find(x=>x.id===callId); if(!k) return;
+  k.emailSent = !k.emailSent;
+  touch(c, k.emailSent ? "Follow-up email marked sent (no answer)" : "Follow-up email mark cleared");
+  if(k.emailSent) toast("Follow-up email logged for "+c.caseId);
+  mutate();
+}
+
+/* ---------- reminders (ting + banner + optional system notification) ---------- */
+let audioCtx = null;
+function playTing(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state === "suspended") audioCtx.resume();
+    const now = audioCtx.currentTime;
+    [1318.5, 1975.5].forEach((freq, i)=>{
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(i===0?0.22:0.12, now+0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now+0.9);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(now); osc.stop(now+0.95);
+    });
+  }catch(e){}
+}
+function armCallbackReminders(caseId, cbId){
+  const c = getCase(caseId); if(!c) return Promise.resolve();
+  const cb = (c.callbacks||[]).find(x=>x.id===cbId); if(!cb) return Promise.resolve();
+  cb.notified = cb.notified || {};
+  cb.notified.armed = !cb.notified.armed;
+  if(cb.notified.armed){
+    cb.notified.pre = false; cb.notified.onTime = false; cb.notified.overdue = false;
+    playTing();
+    toast("🔔 Reminders set for "+fmtDT(cb.at)+" — 5 min prior, on time, and if overdue");
+    if("Notification" in window && Notification.permission==="default") Notification.requestPermission().catch(()=>{});
+  } else { toast("Reminders cancelled"); }
+  touch(c, cb.notified.armed ? "Callback reminders armed" : "Callback reminders cancelled");
+  mutate();
+  return Promise.resolve();
+}
+function fireReminder(c, cb, label, tone){
+  playTing();
+  toast(`🔔 ${label} — ${c.customer||c.entity||c.caseId} · ${cb.reason||"callback"}`);
+  showReminderBanner(c, cb, label);
+  if("Notification" in window && Notification.permission==="granted"){
+    try{ new Notification(`${label} — ${c.customer||c.entity||c.caseId}`, {body:`${cb.reason||"Callback"} · ${c.phone||"no phone"} · ${c.caseId}`, tag: cb.id+"-"+tone}); }catch(e){}
+  }
+}
+function showReminderBanner(c, cb, label){
+  const bar = document.createElement("div");
+  bar.className = "reminder-banner";
+  bar.innerHTML = `<div style="flex:1;min-width:0"><b>🔔 ${esc(label)}</b><span>${esc(c.customer||c.entity||c.caseId)} · ${esc(cb.reason||"callback")} · ${esc(c.phone||"no phone")}</span></div>
+    <button class="btn-ghost btn-sm">View case</button>`;
+  bar.querySelector("button").onclick = ()=>{ bar.remove(); go('work', c.id); };
+  document.body.appendChild(bar);
+  requestAnimationFrame(()=>bar.classList.add("in"));
+  setTimeout(()=>{ bar.classList.remove("in"); setTimeout(()=>bar.remove(), 400); }, 9000);
+}
+function checkCallbackReminders(){
+  const now = Date.now();
+  let dirty = false;
+  S.cases.forEach(c=>{
+    (c.callbacks||[]).forEach(cb=>{
+      if(cb.done || !cb.notified || !cb.notified.armed) return;
+      const at = new Date(cb.at).getTime();
+      const mins = (at-now)/60000;
+      if(!cb.notified.pre && mins<=5 && mins>-4){ fireReminder(c,cb,"Upcoming call in 5 min","pre"); cb.notified.pre = true; dirty = true; }
+      if(!cb.notified.onTime && mins<=0 && mins>-8){ fireReminder(c,cb,"Call due now","on"); cb.notified.onTime = true; dirty = true; }
+      if(!cb.notified.overdue && mins<=-15){ fireReminder(c,cb,"Call overdue","overdue"); cb.notified.overdue = true; dirty = true; }
+    });
+  });
+  if(dirty) save();
+}
+setInterval(checkCallbackReminders, 10000);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) checkCallbackReminders(); });
+document.addEventListener("click", function unlockAudio(){
+  try{ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==="suspended") audioCtx.resume(); }catch(e){}
+}, {once:true});
+
+/* ---------- cases table ---------- */
+let sortKey = "caseId", sortDir = 1;
+let selected = new Set();
+function filteredCases(){
+  const st = $("fltStatus").value, rk = $("fltRisk").value, ty = $("fltType").value;
+  const q = $("fltSearch").value.trim().toLowerCase();
+  let list = S.cases.filter(c =>
+    (!st || c.status===st) && (!rk || riskOf(c)===rk) &&
+    (!ty || (ty==="Assisted" ? isAssisted(c) : isOnline(c))) &&
+    (!q || [c.caseId,c.entity,c.abn,c.customer].join(" ").toLowerCase().includes(q))
+  );
+  const val = c => sortKey==="ageing" ? ageingOf(c)
+    : sortKey==="risk" ? riskScoreOf(c)
+    : sortKey==="health" ? healthOf(c)
+    : sortKey==="type" ? (isAssisted(c)?"Assisted":"Online")
+    : (c[sortKey]||"").toString().toLowerCase();
+  list.sort((a,b)=>{ const A=val(a),B=val(b); return (A>B?1:A<B?-1:0)*sortDir; });
+  return list;
+}
+function sortCases(k){ if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=1;} renderCases(); }
+
+function renderCases(){
+  const list = filteredCases();
+  $("caseCountLbl").textContent = `${list.length} of ${S.cases.length} cases`;
+  $("navCaseCnt").textContent = S.cases.length || "";
+  $("casesBody").innerHTML = list.length ? list.map(c=>{
+    const r = riskOf(c), h = healthOf(c);
+    return `<tr onclick="go('work','${c.id}')">
+      <td onclick="event.stopPropagation()"><input type="checkbox" ${selected.has(c.id)?"checked":""} onchange="toggleSel('${c.id}',this.checked)" style="width:16px;height:16px"></td>
+      <td class="cid">${esc(c.caseId)}</td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${esc(c.entity||"—")}</td>
+      <td>${statusPill(c.status)}</td>
+      <td class="mono">${ageingOf(c)}d</td>
+      <td style="max-width:190px;overflow:hidden;text-overflow:ellipsis" class="muted">${esc(nextActionOf(c))}</td>
+      <td><span class="tag">${caseTypeLabel(c)}</span></td>
+      <td style="text-align:center">${riskOrb(r)}</td>
+      <td>${healthBar(h)}</td>
+      <td onclick="event.stopPropagation()"><div class="rowact">
+        <button class="btn-ghost btn-icon" title="Open" onclick="go('work','${c.id}')">✎</button>
+        <button class="btn-ghost btn-icon" title="Duplicate" onclick="duplicateCase('${c.id}')">⧉</button>
+        <button class="btn-ghost btn-icon" title="PDF report" onclick="generateCasePDF('${c.id}')">⭳</button>
+        <button class="btn-ghost btn-icon btn-danger" title="Delete" onclick="deleteCase('${c.id}')">✕</button>
+      </div></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="10"><div class="empty" style="border:none">No cases match the current filters.</div></td></tr>`;
+  renderBulkbar();
+  refreshFilterOptions();
+}
+function refreshFilterOptions(){
+  const fill = (sel, opts, first) => { const cur = sel.value; sel.innerHTML = `<option value="">${first}</option>` + opts.map(o=>`<option>${esc(o)}</option>`).join(""); sel.value = cur; };
+  fill($("fltStatus"), STATUSES, "Status: All");
+  fill($("bulkStatus"), STATUSES, "Change status…");
+  $("cfStatus").innerHTML = STATUSES.map(s=>`<option>${s}</option>`).join("");
+}
+function toggleSel(id, on){ on ? selected.add(id) : selected.delete(id); renderBulkbar(); }
+function toggleSelectAll(cb){ const list = filteredCases(); list.forEach(c => cb.checked ? selected.add(c.id) : selected.delete(c.id)); renderCases(); }
+function clearSelection(){ selected.clear(); renderCases(); }
+function renderBulkbar(){ $("bulkbar").classList.toggle("on", selected.size>0); $("bulkCount").textContent = selected.size + " selected"; }
+function applyBulk(){
+  const st = $("bulkStatus").value;
+  if(!st) return toast("Pick a status first");
+  S.cases.forEach(c=>{ if(!selected.has(c.id)) return; c.status = st; touch(c, "Status bulk-changed → "+st); });
+  $("bulkStatus").value = "";
+  toast(`Updated ${selected.size} case(s)`); selected.clear(); mutate();
+}
+function bulkDelete(){
+  if(!selected.size) return;
+  if(!confirm(`Delete ${selected.size} selected case(s)? This cannot be undone.`)) return;
+  S.cases = S.cases.filter(c=>!selected.has(c.id));
+  selected.clear(); toast("Selected cases deleted"); mutate();
+}
+function duplicateCase(id){
+  const c = getCase(id); if(!c) return;
+  const copy = JSON.parse(JSON.stringify(c));
+  copy.id = uid(); S.seq++; copy.caseId = "KYC-"+String(S.seq).padStart(5,"0");
+  copy.entity = c.entity + " (copy)";
+  copy.createdAt = copy.updatedAt = new Date().toISOString();
+  copy.timeline = [{at:copy.createdAt, text:"Case duplicated from "+c.caseId}];
+  S.cases.unshift(copy); toast("Case duplicated"); mutate();
+}
+function deleteCase(id){
+  const c = getCase(id); if(!c) return;
+  if(!confirm(`Delete ${c.caseId} — ${c.entity||"case"}?`)) return;
+  S.cases = S.cases.filter(x=>x.id!==id);
+  if(currentCaseId===id) currentCaseId = null;
+  toast("Case deleted"); mutate();
+}
+
+/* ---------- case form ---------- */
+let editingCaseId = null;
+function openCaseForm(id, prefill){
+  editingCaseId = id || null;
+  const c = id ? getCase(id) : null;
+  $("caseModalTitle").textContent = c ? "Edit static details — "+c.caseId : "New case";
+  refreshFilterOptions();
+  $("cfCaseId").value = c?.caseId || prefill?.caseId || "";
+  $("cfEntity").value = c?.entity || prefill?.entity || "";
+  $("cfAbn").value = c?.abn || prefill?.abn || "";
+  $("cfAcn").value = c?.acn || prefill?.acn || "";
+  $("cfCustomer").value = c?.customer || prefill?.customer || "";
+  $("cfDob").value = c?.dob || "";
+  $("cfCn").value = c?.cn || "";
+  $("cfBcn").value = c?.bcn || "";
+  $("cfPhone").value = c?.phone || prefill?.phone || "";
+  $("cfEmail").value = c?.email || prefill?.email || "";
+  $("cfStatus").value = c?.status || "New";
+  $("cfEntered").value = c?.entered || todayISO();
+  $("cfTags").value = (c?.tags||prefill?.tags||[]).join(", ");
+  $("caseModal").classList.add("open");
+  $("cfEntity").focus();
+}
+function saveCaseForm(){
+  const entity = $("cfEntity").value.trim();
+  if(!entity && !$("cfCustomer").value.trim()) return toast("Entity or customer name required");
+  let c;
+  if(editingCaseId){ c = getCase(editingCaseId); }
+  else { c = newCase(); S.seq++; S.cases.unshift(c); }
+  if($("cfCaseId").value.trim()) c.caseId = $("cfCaseId").value.trim();
+  c.entity = entity; c.abn = $("cfAbn").value.trim(); c.acn = $("cfAcn").value.trim();
+  c.customer = $("cfCustomer").value.trim(); c.cn = $("cfCn").value.trim(); c.bcn = $("cfBcn").value.trim();
+  c.phone = $("cfPhone").value.trim(); c.email = $("cfEmail").value.trim();
+  c.dob = $("cfDob").value || "";
+  c.status = $("cfStatus").value;
+  c.entered = $("cfEntered").value || todayISO();
+  c.tags = $("cfTags").value.split(",").map(t=>t.trim()).filter(Boolean);
+  if(lastExtraction && lastExtraction.pendingAttach){
+    c.notes.unshift({at:new Date().toISOString(), by:S.me, situation:"PDF extraction", text:"PDF EXTRACTION (raw):\n"+lastExtraction.raw.slice(0,4000)});
+    Object.assign(c.flags, lastExtraction.flags);
+    lastExtraction.pendingAttach = false;
+  }
+  touch(c, editingCaseId ? "Static details updated" : "Case created");
+  currentCaseId = c.id;
+  closeModal("caseModal"); toast("Case saved"); mutate();
+  go("work", c.id);
+}
+
+/* ---------- work case view ---------- */
+function extLinkIcon(){ return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14L21 3"/></svg>`; }
+function renderWork(){
+  const wrap = $("workWrap");
+  const c = getCase(currentCaseId) || S.cases[0];
+  if(!c){ wrap.innerHTML = `<div class="empty" style="margin-top:30px">No case selected. Create one with “+ Quick Add” or pick a row in Cases.</div>`; return; }
+  currentCaseId = c.id;
+  const r = riskOf(c), h = healthOf(c);
+  const ckDone = CHECKLIST_ITEMS.filter(k=>c.checklist[k]).length;
+  const plan = nextContactPlan(c);
+
+  wrap.innerHTML = `
+  <div class="wc-head">
+    ${riskOrb(r, true)}
+    <div style="flex:1;min-width:220px">
+      <div class="eyebrow">${esc(c.caseId)} · entered ${fmtD(c.entered)} · ageing ${ageingOf(c)}d</div>
+      <h2>${esc(c.entity||"(no entity name)")}</h2>
+      <div style="margin-top:6px">
+        <span class="pill p-${r.toLowerCase()}">${r} risk</span>
+        ${statusPill(c.status)}
+        <span class="pill s-pill">${caseTypeLabel(c)}</span>
+        ${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+      ${healthBar(h)}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-ghost btn-sm" onclick="openCaseForm('${c.id}')">Edit static details</button>
+        <button class="btn-ghost btn-sm" onclick="openActionPack('${c.id}')">Customer action pack</button>
+        <button class="btn-cyan btn btn-sm" onclick="generateCasePDF('${c.id}')">PDF report</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="nba" style="margin-bottom:16px">⚡ <span>Next best action: <b>${esc(nextActionOf(c))}</b></span></div>
+
+  <div class="wc-grid">
+    <div>
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-title">Static details</div>
+        <div class="grid2" style="font-size:13px">
+          <div style="margin-bottom:9px"><div class="eyebrow">ABN</div><div class="mono">${c.abn ? `<a class="ext-link" href="${abnLookupUrl(c.abn)}" target="_blank" rel="noopener">${esc(c.abn)} ${extLinkIcon()}</a>` : "—"}</div></div>
+          <div style="margin-bottom:9px"><div class="eyebrow">ACN</div><div class="mono">${esc(c.acn||"—")}</div></div>
+          <div style="margin-bottom:9px"><div class="eyebrow">Customer</div><div class="mono">${esc(c.customer||"—")}</div></div>
+          <div style="margin-bottom:9px"><div class="eyebrow">DOB</div><div class="mono">${c.dob?fmtD(c.dob):"—"}</div></div>
+          <div style="margin-bottom:9px"><div class="eyebrow">CN</div><div class="mono">${c.cn ? `<a class="ext-link" href="${cnUrl(c.cn)}" target="_blank" rel="noopener">${esc(c.cn)} ${extLinkIcon()}</a>` : "—"}</div></div>
+          <div style="margin-bottom:9px"><div class="eyebrow">BCN</div><div class="mono">${c.bcn ? `<a class="ext-link" href="${bcnUrl(c.bcn)}" target="_blank" rel="noopener">${esc(c.bcn)} ${extLinkIcon()}</a>` : "—"}</div></div>
+          <div style="margin-bottom:9px"><div class="eyebrow">Phone</div><div class="mono">${esc(c.phone||"—")}</div></div>
+          <div style="margin-bottom:9px"><div class="eyebrow">Email</div><div class="mono">${esc(c.email||"—")}</div></div>
+          <div style="margin-bottom:9px"><div class="eyebrow">Type</div><div class="mono">${caseTypeLabel(c)}</div></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-title">Checklist <span class="spacer"></span><span class="eyebrow">${ckDone}/${CHECKLIST_ITEMS.length}</span></div>
+        <div class="checklist">
+          ${CHECKLIST_ITEMS.map(k=>`<label><input type="checkbox" ${c.checklist[k]?"checked":""}
+            onchange="wcCheck('${c.id}', ${JSON.stringify(k).replace(/"/g,"&quot;")}, this.checked)"> ${esc(k)}</label>`).join("")}
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-title">Documents <span class="spacer"></span>
+          <button class="btn-ghost btn-sm" onclick="wcAddDoc('${c.id}')">+ Add document</button></div>
+        ${(c.documents||[]).length ? c.documents.map((d,i)=>`
+          <div class="doc-row">
+            <div class="grow"><b>${esc(d.name)}</b> <span class="muted">· ${esc(d.type)}</span></div>
+            <select style="width:auto;padding:4px 8px" onchange="wcDocStatus('${c.id}',${i},this.value)">
+              ${["Requested","Received","Verified","Rejected"].map(s=>`<option ${d.status===s?"selected":""}>${s}</option>`).join("")}
+            </select>
+            <button class="btn-ghost btn-icon btn-danger" onclick="wcDelDoc('${c.id}',${i})">✕</button>
+          </div>`).join("") : `<div class="empty">No documents tracked yet.</div>`}
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Notes <span class="spacer"></span></div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <select id="wcNoteSituation" style="width:auto"><option>General</option><option>Trust structure</option><option>Documents outstanding</option><option>Fraud / risk</option><option>Customer dispute</option><option>eKYC</option><option>PDF extraction</option></select>
+          <input id="wcNote" placeholder="Add a case note…" onkeydown="if(event.key==='Enter')wcAddNote('${c.id}')">
+          <button class="btn-cyan btn btn-sm" onclick="wcAddNote('${c.id}')">Add</button>
+        </div>
+        ${(c.notes||[]).slice(0,20).map(n=>`
+          <div class="note-row"><div class="grow">${n.situation?`<span class="tag" style="font-size:10px">${esc(n.situation)}</span><br>`:""}<span style="white-space:pre-wrap">${esc(n.text)}</span></div>
+          <div class="mono muted" style="font-size:10.5px;white-space:nowrap">${fmtDT(n.at)}<br>${esc(n.by||"")}</div></div>`).join("") || `<div class="empty">No notes yet.</div>`}
+      </div>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-title">Operational status</div>
+        <div class="grid2">
+          <label class="f"><span>Status</span>
+            <select onchange="wcStatus('${c.id}',this.value)">${STATUSES.map(s=>`<option ${c.status===s?"selected":""}>${s}</option>`).join("")}</select></label>
+          <label class="f"><span>QC passed</span>
+            <select onchange="wcQC('${c.id}',this.value==='Yes')"><option ${c.qcPassed?"":"selected"}>No</option><option ${c.qcPassed?"selected":""}>Yes</option></select></label>
+        </div>
+        ${c.status==="Outstanding" ? `
+        <div class="outstanding-box">
+          <div class="eyebrow">Outstanding items — select what's missing</div>
+          <div class="outstanding-grid">
+            ${OUTSTANDING_ITEMS.map(item=>`<label class="outstanding-chip ${(c.outstandingItems||[]).includes(item)?"checked":""}">
+              <input type="checkbox" ${(c.outstandingItems||[]).includes(item)?"checked":""} onchange="wcToggleOutstanding('${c.id}', ${JSON.stringify(item).replace(/"/g,"&quot;")})"> ${esc(item)}
+            </label>`).join("")}
+          </div>
+        </div>` : ""}
+        <div class="eyebrow" style="margin:12px 0 8px">Risk & complexity flags</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${Object.entries({fraud:"Fraud alert",sanctions:"Sanctions",pep:"PEP",seq:"SEQ",mismatch:"Name/DOB/Addr mismatch",nbn:"NBN flag",smo:"SMO verification",complexEntity:"Complex entity",missingPrecommencement:"Missing pre-commencement"})
+            .map(([k,lbl])=>`<button class="cf-btn ${c.flags[k]?"on":""}" style="flex:none" onclick="wcFlag('${c.id}','${k}')">${lbl}</button>`).join("")}
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-title">Call-timing plan <span class="spacer"></span><span class="eyebrow">attempts: ${c.contactAttempts||0}</span></div>
+        <div class="nba" style="margin-bottom:0">📞 <span>Next scheduled stage: <b>${esc(plan.stage)}</b> — ${fmtDT(plan.at.toISOString())}</span></div>
+        <p class="muted" style="font-size:11.5px;margin:8px 0 0">1st call ASAP → if unanswered, 2nd attempt after 4 business hours (9am–7pm AEST, Mon–Fri) → last attempt next business day → pre-withdrawal sent immediately after.</p>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-title">Callback log <span class="spacer"></span>
+          <button class="btn-ghost btn-sm" onclick="wcAddCallback('${c.id}')">+ Schedule callback</button></div>
+        ${(c.callbacks||[]).length ? c.callbacks.map((cb,i)=>`
+          <div class="cb-row">
+            <div class="grow"><span class="mono" style="color:${!cb.done && new Date(cb.at)<new Date()?'var(--red)':'var(--amber)'}">${fmtDT(cb.at)}</span>
+            <span class="muted"> · ${esc(cb.reason||"callback")}</span></div>
+            ${cb.done?`<span class="pill s-complete">done</span>`:`<button class="btn-ghost btn-sm" onclick="wcCbDone('${c.id}',${i})">Mark done</button>`}
+          </div>`).join("") : `<div class="empty">No callbacks scheduled.</div>`}
+      </div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-title">Call log for this case <span class="spacer"></span>
+          <button class="btn-cyan btn btn-sm" onclick="openCallForCase('${c.id}')">Log a call →</button></div>
+        ${(c.calls||[]).length ? c.calls.map(k=>`
+          <div class="case-call-row">
+            <div class="cc-top">
+              <div><b>#${k.attempt}</b> ${esc(k.scenario)} → <span style="color:var(--cyan)">${esc(k.outcome)}</span></div>
+              <div class="mono muted" style="font-size:10.5px">${fmtDT(k.at)} · ${k.duration}</div>
+            </div>
+            ${k.notes ? `<div class="cc-notes">📝 ${esc(k.notes)}</div>` : ""}
+            <div class="cc-flags">
+              <span class="${k.opportunityConfirmed?"on":""}">${k.opportunityConfirmed?"✔":"○"} Opportunity</span>
+              ${!k.answered ? `<span class="${k.emailSent?"on":""}">${k.emailSent?"✔":"○"} Email sent</span>` : ""}
+            </div>
+          </div>`).join("") : `<div class="empty">No calls logged.</div>`}
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Lifecycle timeline</div>
+        <div class="timeline">
+          ${(c.timeline||[]).slice(0,25).map(t=>`<div class="tl-item"><div class="when">${fmtDT(t.at)}</div>${esc(t.text)}</div>`).join("") || `<div class="empty">No events yet.</div>`}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function wcCheck(id, key, on){ const c=getCase(id); c.checklist[key]=on; touch(c,(on?"✔ ":"✘ ")+key); mutate(); }
+function wcStatus(id, s){
+  const c=getCase(id);
+  const prevStatus = c.status;
+  c.status=s;
+  if(["1st Contact","2nd Contact","Last Contact"].includes(s) && !["1st Contact","2nd Contact","Last Contact"].includes(prevStatus)){
+    c.contactAttempts = s==="1st Contact"?1:s==="2nd Contact"?2:3;
+  }
+  touch(c,"Status → "+s); mutate();
+}
+function wcQC(id, on){ const c=getCase(id); c.qcPassed=on; touch(c,"QC "+(on?"passed":"reset")); mutate(); }
+function wcFlag(id, k){ const c=getCase(id); c.flags[k]=!c.flags[k]; touch(c,"Flag "+k+" "+(c.flags[k]?"raised":"cleared")); mutate(); }
+function wcToggleOutstanding(id, item){
+  const c=getCase(id); c.outstandingItems = c.outstandingItems || [];
+  const i = c.outstandingItems.indexOf(item);
+  if(i>=0) c.outstandingItems.splice(i,1); else c.outstandingItems.push(item);
+  touch(c, "Outstanding items updated: "+c.outstandingItems.join(", ")); mutate();
+}
+function wcAddDoc(id){
+  const name = prompt("Document name (e.g. Certified trust deed):"); if(!name) return;
+  const type = prompt("Type (ID / Trust deed / ASIC extract / Other):","Other") || "Other";
+  const c=getCase(id); c.documents.push({name,type,status:"Requested"}); touch(c,"Document requested: "+name); mutate();
+}
+function wcDocStatus(id,i,s){ const c=getCase(id); c.documents[i].status=s; touch(c,`Document “${c.documents[i].name}” → ${s}`); mutate(); }
+function wcDelDoc(id,i){ const c=getCase(id); const d=c.documents.splice(i,1)[0]; touch(c,"Document removed: "+d.name); mutate(); }
+function wcAddNote(id){
+  const v = $("wcNote").value.trim(); if(!v) return;
+  const situation = $("wcNoteSituation").value;
+  const c=getCase(id); c.notes.unshift({at:new Date().toISOString(), by:S.me, situation, text:v}); touch(c,"Note added ("+situation+")"); mutate();
+}
+function wcAddCallback(id){
+  const when = prompt("Callback date & time (YYYY-MM-DD HH:MM):", todayISO()+" 10:00"); if(!when) return;
+  const at = new Date(when.replace(" ","T"));
+  if(isNaN(at)) return toast("Couldn't read that date — use YYYY-MM-DD HH:MM");
+  const reason = prompt("Reason:","Follow up outstanding documents") || "Callback";
+  const c=getCase(id); c.callbacks.push({id:uid(), at:at.toISOString(), reason, done:false, notified:{}}); touch(c,"Callback scheduled "+fmtDT(at.toISOString())); mutate();
+}
+function wcCbDone(id,i){ const c=getCase(id); c.callbacks[i].done=true; touch(c,"Callback completed"); mutate(); }
+
+/* ---------- template fill + action pack ---------- */
+function openActionPack(id){
+  const c = getCase(id); if(!c) return;
+  const outDocs = (c.documents||[]).filter(d=>d.status!=="Verified");
+  const cbNext = (c.callbacks||[]).find(cb=>!cb.done);
+  const pack =
+`CUSTOMER ACTION PACK — ${c.caseId}
+Entity: ${c.entity} (ABN ${c.abn||"—"})
+Prepared by ${S.me} on ${fmtD(todayISO())}
+
+CURRENT STATUS
+• ${c.status} — ${nextActionOf(c)}
+• Risk level: ${riskOf(c)} · Case health: ${healthOf(c)}%
+
+OUTSTANDING ACTIONS
+${outDocs.length ? outDocs.map((d,i)=>`${i+1}. Provide: ${d.name} (${d.type}) — currently ${d.status}`).join("\n") : "• No outstanding documents — review progressing internally."}
+${(c.outstandingItems||[]).map(item=>"• Outstanding: "+item).join("\n")}
+
+CALLBACK INSTRUCTIONS
+${cbNext ? "• Next scheduled contact: "+fmtDT(cbNext.at)+" — "+(cbNext.reason||"") : "• No callback currently scheduled — respond via your banker or the number provided."}
+
+Thank you — ${S.me}, NAB KYC Operations`;
+  $("packBody").textContent = pack;
+  $("packModal").classList.add("open");
+  $("packModal").dataset.caseId = id;
+}
+function downloadPack(){
+  const txt = $("packBody").textContent;
+  const c = getCase($("packModal").dataset.caseId);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([txt],{type:"text/plain"}));
+  a.download = `Action_Pack_${c?c.caseId:"case"}.txt`; a.click(); URL.revokeObjectURL(a.href);
+}
+function packToNotes(){
+  const c = getCase($("packModal").dataset.caseId); if(!c) return;
+  c.notes.unshift({at:new Date().toISOString(), by:S.me, situation:"Action pack", text:$("packBody").textContent});
+  touch(c,"Action pack added to notes"); closeModal("packModal"); toast("Added to notes"); mutate();
+}
+
+/* ---------- board ---------- */
+function renderBoard(){
+  $("boardWrap").innerHTML = BOARD_PHASES.map(ph=>{
+    const cards = S.cases.filter(c=>ph.statuses.includes(c.status));
+    return `<div class="bcol" data-status="${ph.statuses[0]}"
+      ondragover="event.preventDefault();this.classList.add('dragover')"
+      ondragleave="this.classList.remove('dragover')"
+      ondrop="boardDrop(event,this)">
+      <h4>${ph.name}<span class="mono">${cards.length}</span></h4>
+      ${cards.map(c=>`<div class="bcard" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${c.id}')"
+        onclick="go('work','${c.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span class="cid">${esc(c.caseId)}</span>${riskOrb(riskOf(c))}
+        </div>
+        <div style="font-weight:600;margin-bottom:5px">${esc(c.entity||c.customer||"—")}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="tag" style="font-size:10px">${caseTypeLabel(c)}</span>
+          ${healthBar(healthOf(c))}
+        </div>
+      </div>`).join("") || `<div class="empty" style="padding:12px;font-size:11px">Empty</div>`}
+    </div>`;
+  }).join("");
+}
+function boardDrop(e, col){
+  e.preventDefault(); col.classList.remove("dragover");
+  const id = e.dataTransfer.getData("text/plain");
+  const c = getCase(id); if(!c) return;
+  const st = col.dataset.status;
+  if(c.status!==st){ c.status = st; touch(c,"Status → "+st+" (board)"); mutate(); renderBoard(); toast(c.caseId+" → "+st); }
+}
+
+/* ---------- calendar ---------- */
+let calCursor = new Date();
+function calShift(n){ calCursor.setMonth(calCursor.getMonth()+n); renderCalendar(); }
+function calToday(){ calCursor = new Date(); renderCalendar(); }
+function renderCalendar(){
+  const y = calCursor.getFullYear(), m = calCursor.getMonth();
+  $("calTitle").textContent = calCursor.toLocaleDateString("en-AU",{month:"long",year:"numeric"});
+  const first = new Date(y,m,1), startDow = (first.getDay()+6)%7;
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const dows = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  let html = dows.map(d=>`<div class="dow">${d}</div>`).join("");
+  const byDate = {};
+  S.cases.forEach(c=>(c.callbacks||[]).forEach(cb=>{ if(cb.done) return; const k = cb.at.slice(0,10); (byDate[k] = byDate[k]||[]).push({c, cb}); }));
+  const cells = [];
+  for(let i=0;i<startDow;i++){ const d = new Date(y,m,1-(startDow-i)); cells.push({d, other:true}); }
+  for(let d=1;d<=daysInMonth;d++) cells.push({d:new Date(y,m,d), other:false});
+  while(cells.length%7) cells.push({d:new Date(y,m,daysInMonth+cells.length%7), other:true});
+  html += cells.map(({d,other})=>{
+    const key = d.toISOString().slice(0,10);
+    const evts = byDate[key]||[];
+    const isToday = key===todayISO();
+    return `<div class="day ${other?"other":""} ${isToday?"today":""}" onclick="openDay('${key}')">
+      <div class="dnum">${d.getDate()}</div>
+      ${evts.slice(0,3).map(({c})=>`<div class="evt">${esc(c.entity||c.caseId)}</div>`).join("")}
+      ${evts.length>3?`<div class="evt" style="background:rgba(139,123,255,.15);border-color:rgba(139,123,255,.4);color:#B3A8FF">+${evts.length-3} more</div>`:""}
+    </div>`;
+  }).join("");
+  $("calGrid").innerHTML = html;
+}
+function openDay(key){
+  const items = [];
+  S.cases.forEach(c=>(c.callbacks||[]).forEach((cb,i)=>{ if(!cb.done && cb.at.slice(0,10)===key) items.push({c,cb,i}); }));
+  $("dayModalTitle").textContent = "Callbacks — " + fmtD(key);
+  $("dayModalBody").innerHTML = items.length ? items.sort((a,b)=>a.cb.at.localeCompare(b.cb.at)).map(({c,cb,i})=>`
+    <div class="mini-row" onclick="closeModal('dayModal');go('work','${c.id}')">
+      ${riskOrb(riskOf(c))}
+      <div class="grow"><div class="nm">${esc(c.entity||c.caseId)}</div>
+      <div class="mt">${esc(c.caseId)} · ${esc(cb.reason||"callback")} · ${esc(c.phone||"no phone")}</div></div>
+      <div class="mono" style="color:var(--amber)">${new Date(cb.at).toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"})}</div>
+    </div>`).join("") : `<div class="empty">No callbacks on this day.</div>`;
+  $("dayModal").classList.add("open");
+}
+
+/* ---------- insights charts ---------- */
+function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+const chartAnimRegistry = new WeakMap();
+function drawBars(canvas, labels, values, colors, opts={}){
+  if(!canvas) return;
+  const prevRaf = chartAnimRegistry.get(canvas);
+  if(prevRaf) cancelAnimationFrame(prevRaf);
+  const dpr = window.devicePixelRatio||1;
+  const W = canvas.clientWidth, H = canvas.clientHeight||220;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  const ctx = canvas.getContext("2d");
+  const max = Math.max(1,...values);
+  const bottomGap = opts.subtitle ? 44 : 40;
+  const pad = 26, bw = Math.min(56,(W-pad*2)/Math.max(1,labels.length)*0.62);
+  const dur = 620;
+  const start = performance.now();
+  function frame(now){
+    const t = Math.min(1, (now-start)/dur);
+    const e = easeOutCubic(t);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+    labels.forEach((lb,i)=>{
+      const x = pad + (W-pad*2)*(i+0.5)/labels.length;
+      const h = (H-bottomGap-28)*values[i]/max*e;
+      const col = colors ? (colors[i]||colors[0]) : "#3ED2E8";
+      const g = ctx.createLinearGradient(0,H-bottomGap-h,0,H-bottomGap);
+      g.addColorStop(0,col); g.addColorStop(1,col+"33");
+      ctx.fillStyle = g;
+      roundRect(ctx, x-bw/2, H-bottomGap-h, bw, Math.max(0,h), 6); ctx.fill();
+      ctx.fillStyle = "#8B96AB"; ctx.font = "9px 'JetBrains Mono',monospace"; ctx.textAlign = "center";
+      ctx.save(); ctx.translate(x, H-bottomGap+16);
+      if(labels.length>6){ ctx.rotate(-0.5); ctx.textAlign="right"; }
+      ctx.fillText(lb.length>11?lb.slice(0,10)+"…":lb, 0, 0); ctx.restore();
+      if(t>0.7){
+        ctx.globalAlpha = Math.min(1,(t-0.7)/0.3);
+        ctx.fillStyle = "#E8ECF4"; ctx.font = "700 11px 'JetBrains Mono',monospace"; ctx.textAlign="center";
+        if(values[i]) ctx.fillText(values[i], x, H-bottomGap-10-h);
+        ctx.globalAlpha = 1;
+      }
+    });
+    if(t<1){ chartAnimRegistry.set(canvas, requestAnimationFrame(frame)); }
+    else chartAnimRegistry.delete(canvas);
+  }
+  chartAnimRegistry.set(canvas, requestAnimationFrame(frame));
+}
+function roundRect(ctx,x,y,w,h,r){
+  r = Math.min(r, h/2, w/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,0);
+  ctx.lineTo(x,y+h); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function drawDonut(canvas, labels, values, colors){
+  if(!canvas) return;
+  const prevRaf = chartAnimRegistry.get(canvas);
+  if(prevRaf) cancelAnimationFrame(prevRaf);
+  const dpr = window.devicePixelRatio||1;
+  const W = canvas.clientWidth, H = canvas.clientHeight||220;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  const ctx = canvas.getContext("2d");
+  const total = values.reduce((a,b)=>a+b,0) || 1;
+  const cx = W*0.34, cy = H/2, R = Math.min(W,H)*0.34, r = R*0.58;
+  const dur = 700;
+  const start = performance.now();
+  function frame(now){
+    const t = Math.min(1, (now-start)/dur);
+    const e = easeOutCubic(t);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+    let a0 = -Math.PI/2;
+    const sweep = Math.PI*2*e;
+    values.forEach((v,i)=>{
+      const portion = (v/total) * sweep;
+      const a1 = a0 + portion;
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,R,a0,a1); ctx.closePath();
+      ctx.fillStyle = colors[i]; ctx.fill();
+      a0 = a1;
+    });
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "#E8ECF4"; ctx.font = "800 20px 'Sora',sans-serif"; ctx.textAlign="center";
+    ctx.fillText(Math.round(total*e), cx, cy+7);
+    if(t>0.5){
+      ctx.globalAlpha = Math.min(1,(t-0.5)/0.5);
+      ctx.textAlign = "left"; ctx.font = "11px 'Inter',sans-serif";
+      labels.forEach((lb,i)=>{
+        const y = H/2 - (labels.length*20)/2 + i*20 + 6;
+        ctx.fillStyle = colors[i]; ctx.beginPath(); ctx.arc(W*0.62, y-4, 5, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#8B96AB"; ctx.fillText(`${lb} — ${values[i]}`, W*0.62+12, y);
+      });
+      ctx.globalAlpha = 1;
+    }
+    if(t<1){ chartAnimRegistry.set(canvas, requestAnimationFrame(frame)); }
+    else chartAnimRegistry.delete(canvas);
+  }
+  chartAnimRegistry.set(canvas, requestAnimationFrame(frame));
+}
+function renderInsights(){
+  const stVals = STATUSES.map(s=>S.cases.filter(c=>c.status===s).length);
+  drawBars($("chStatus"), STATUSES.map(s=>s.length>10?s.slice(0,9)+"…":s), stVals, STATUSES.map(s=>STATUS_COLOR[s]||"#3ED2E8"));
+  const risks = ["High","Medium","Low"].map(r=>S.cases.filter(c=>riskOf(c)===r).length);
+  drawDonut($("chPriority"), ["High","Medium","Low"], risks, ["#FF3B4E","#FFB020","#2FD57C"]);
+  drawBars($("chOwner"), ["Assisted","Online"], [S.cases.filter(isAssisted).length, S.cases.filter(isOnline).length], ["#3ED2E8","#8B7BFF"]);
+  const activeSt = STATUSES.filter(s=>S.cases.some(c=>c.status===s));
+  drawBars($("chHealth"), activeSt.map(s=>s.length>10?s.slice(0,9)+"…":s), activeSt.map(s=>{
+    const cs = S.cases.filter(c=>c.status===s);
+    return Math.round(cs.reduce((n,c)=>n+healthOf(c),0)/Math.max(1,cs.length));
+  }), ["#2FD57C"]);
+}
+window.addEventListener("resize", ()=>{ if($("v-insights").classList.contains("active")) renderInsights(); });
+
+/* ---------- PDF extractor ---------- */
+let lastExtraction = null;
+["pdfDrop","ioDrop"].forEach(id=>{
+  const el = $(id);
+  el.addEventListener("dragover", e=>{e.preventDefault(); el.classList.add("drag");});
+  el.addEventListener("dragleave", ()=>el.classList.remove("drag"));
+  el.addEventListener("drop", e=>{
+    e.preventDefault(); el.classList.remove("drag");
+    const f = e.dataTransfer.files[0];
+    if(!f) return;
+    id==="pdfDrop" ? handlePdf(f) : handleImport(f);
+  });
+});
+async function handlePdf(file){
+  if(!file) return;
+  if(!/\.pdf$/i.test(file.name)) return toast("That isn't a PDF");
+  if(!window.pdfjsLib) return toast("PDF engine still loading — try again in a moment");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  $("pdfStatus").innerHTML = `<span class="muted">Parsing ${esc(file.name)}…</span>`;
+  try{
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    let raw = "";
+    for(let p=1;p<=pdf.numPages;p++){ const page = await pdf.getPage(p); const tc = await page.getTextContent(); raw += tc.items.map(i=>i.str).join(" ") + "\n"; }
+    if(!raw.trim()) raw = "(No embedded text found — this PDF appears to be scanned images. OCR is not available in this build.)";
+    $("pdfRaw").textContent = raw.slice(0, 20000);
+    const ex = extractEntities(raw);
+    ex.raw = raw; ex.pendingAttach = true;
+    lastExtraction = ex;
+    renderExtraction(ex, file.name);
+  }catch(err){
+    $("pdfStatus").innerHTML = `<div class="flagbox flag-red">Could not parse PDF: ${esc(err.message||err)}</div>`;
+  }
+}
+function extractEntities(raw){
+  const up = raw.toUpperCase();
+  const flat = raw.replace(/\s+/g," ");
+  const abnM = flat.match(/\bABN[:\s]*((?:\d[\s]?){11})\b/i) || flat.match(/\b(\d{2}\s?\d{3}\s?\d{3}\s?\d{3})\b/);
+  const abn = abnM ? abnM[1].replace(/\s/g,"") : "";
+  const acnM = flat.match(/\bACN[:\s]*((?:\d[\s]?){9})\b/i) || flat.match(/\b(\d{3}\s?\d{3}\s?\d{3})\b/);
+  const acn = acnM ? acnM[1].replace(/\s/g,"") : "";
+  let entity = "";
+  const lblM = flat.match(/entity\s*name[:\s]+([A-Z0-9&'.,\- ]{3,70})/i);
+  if(lblM) entity = lblM[1].trim();
+  if(!entity){ const nm = flat.match(/\b([A-Z][A-Za-z0-9&'.\- ]{2,60}\b(?:PTY\.?\s?LTD\.?|PROPRIETARY LIMITED|LIMITED|LTD|TRUST|PARTNERSHIP|INCORPORATED|INC))\b/); if(nm) entity = nm[1].replace(/\s+/g," ").trim(); }
+  const grabList = (label) => {
+    const re = new RegExp(label + String.raw`s?[:\s]+((?:[A-Z][a-z]+(?:\s[A-Z][a-z]+){0,3}(?:,|;|\sand\s|\s{2,}|$)\s*){1,8})`, "i");
+    const m = flat.match(re);
+    if(!m) return [];
+    return m[1].split(/,|;|\band\b/).map(s=>s.trim()).filter(s=>/^[A-Z][a-z]+(\s[A-Z][a-z]+){0,3}$/.test(s)).slice(0,8);
+  };
+  const directors = grabList("Director");
+  const shareholders = grabList("Shareholder");
+  const customer = directors[0] || "";
+  const flags = {fraud:false, sanctions:false, seq:false, mismatch:false};
+  const hits = [];
+  FRAUD_LIST.forEach(x=>{ if(up.includes(x)){ flags.fraud = true; hits.push({type:"red", msg:"FRAUD list match: "+x}); }});
+  SANCTIONS_LIST.forEach(x=>{ if(up.includes(x)){ flags.sanctions = true; hits.push({type:"red", msg:"SANCTIONS list match: "+x}); }});
+  SEQ_KEYWORDS.forEach(x=>{ if(up.includes(x)){ flags.seq = true; hits.push({type:"amber", msg:"SEQ indicator found: "+x}); }});
+  if(abn && !/^\d{11}$/.test(abn)) hits.push({type:"amber", msg:"ABN format mismatch — expected 11 digits, got "+abn.length});
+  if(/mismatch|does not match|discrepanc/i.test(flat)){ flags.mismatch = true; hits.push({type:"amber", msg:"Possible data mismatch language detected in document"}); }
+  if(!hits.length) hits.push({type:"ok", msg:"No fraud, sanctions, SEQ or mismatch indicators detected"});
+  return {entity, abn, acn, directors, shareholders, customer, flags, hits};
+}
+function renderExtraction(ex, fname){
+  $("pdfStatus").innerHTML = `<div class="flagbox flag-ok" style="font-weight:400">Parsed <b>${esc(fname)}</b> — review the extracted entities below.</div>`;
+  $("pdfFlags").innerHTML = ex.hits.map(h=>`<div class="flagbox flag-${h.type==="red"?"red":h.type==="amber"?"amber":"ok"}">${h.type==="red"?"⛔":h.type==="amber"?"⚠":"✔"} ${esc(h.msg)}</div>`).join("");
+  $("pdfExtract").innerHTML = `
+    <hr class="rule">
+    <div class="grid2" style="font-size:13px">
+      ${[["Entity name",ex.entity],["ABN",ex.abn],["ACN",ex.acn],["Customer (1st director)",ex.customer],
+         ["Directors",ex.directors.join(", ")],["Shareholders",ex.shareholders.join(", ")]]
+        .map(([k,v])=>`<div style="margin-bottom:9px"><div class="eyebrow">${k}</div><div class="mono">${esc(v||"— not found")}</div></div>`).join("")}
+    </div>
+    <button class="btn" onclick="extractToForm()">Autofill case form →</button>
+    <p class="muted" style="font-size:12px;margin-top:8px">Saving the case stores the raw extraction text as a permanent case note and applies detected flags.</p>`;
+}
+function extractToForm(){
+  if(!lastExtraction) return;
+  const ex = lastExtraction;
+  openCaseForm(null, { entity: ex.entity, abn: ex.abn, acn: ex.acn, customer: ex.customer, tags: [...(ex.directors.length?["directors:"+ex.directors.length]:[]), ...(ex.flags.seq?["SEQ"]:[])] });
+}
+
+/* ---------- case road (3D scroll experience) ---------- */
+var caseRoad = null;
+function teardownCaseRoad(){
+  if(!caseRoad) return;
+  cancelAnimationFrame(caseRoad.raf);
+  window.removeEventListener("scroll", caseRoad.onScroll);
+  window.removeEventListener("resize", caseRoad.onResize);
+  window.removeEventListener("mousemove", caseRoad.onMove);
+  if(caseRoad.renderer){ try{ caseRoad.renderer.dispose(); }catch(e){} }
+  const cv = $("caseRoadFx");
+  if(cv){ cv.style.opacity = "0"; }
+  caseRoad = null;
+}
+function initCaseRoad(){
+  teardownCaseRoad();
+  if(!window.THREE) return;
+  let holder = $("caseRoadFx");
+  if(!holder || !$("v-work").classList.contains("active")) return;
+  const fresh = holder.cloneNode(false);
+  holder.replaceWith(fresh);
+  holder = fresh;
+  const RED = 0xE30613, INK = 0x1c2650, CYAN = 0x3ED2E8, DARK = 0x05060f;
+  let W = innerWidth, H = innerHeight;
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(DARK, 14, 70);
+  const camera = new THREE.PerspectiveCamera(56, W/H, 0.1, 140);
+  let renderer;
+  try{ renderer = new THREE.WebGLRenderer({canvas:holder, antialias:true, alpha:true, powerPreference:"low-power"}); }catch(e){ return; }
+  renderer.setClearColor(0x000000, 0);
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1, 1.5));
+  renderer.setSize(W, H);
+  function glowTex(inner, outer){
+    const c = document.createElement("canvas"); c.width = c.height = 64;
+    const x = c.getContext("2d"), g = x.createRadialGradient(32,32,0,32,32,32);
+    g.addColorStop(0,inner); g.addColorStop(.35,outer); g.addColorStop(1,"rgba(0,0,0,0)");
+    x.fillStyle = g; x.fillRect(0,0,64,64);
+    return new THREE.CanvasTexture(c);
+  }
+  const redGlow = glowTex("rgba(255,225,228,1)","rgba(227,6,19,.55)");
+  const cyanGlow = glowTex("rgba(210,255,250,1)","rgba(62,210,232,.5)");
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0,1.3,6), new THREE.Vector3(-2.5,1.4,-6),
+    new THREE.Vector3(2.5,1.6,-18), new THREE.Vector3(-2,1.8,-30),
+    new THREE.Vector3(1.5,1.5,-42), new THREE.Vector3(0,1.9,-54)
+  ]);
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve.getPoints(160)), new THREE.LineBasicMaterial({color:RED, transparent:true, opacity:.45})));
+  function offsetLine(off){
+    const pts=[], n=120;
+    for(let i=0;i<=n;i++){ const t=i/n, p=curve.getPointAt(t), a=curve.getPointAt(Math.min(.999,t+.004));
+      const dx=a.x-p.x, dz=a.z-p.z, len=Math.sqrt(dx*dx+dz*dz)||1;
+      pts.push(new THREE.Vector3(p.x + (-dz/len)*off, p.y-.3, p.z + (dx/len)*off)); }
+    return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:INK, transparent:true, opacity:.7}));
+  }
+  scene.add(offsetLine(.8)); scene.add(offsetLine(-.8));
+  function roadX(z){ const t = Math.max(0, Math.min(.999,(6-z)/60)); return curve.getPointAt(t).x; }
+  const gears = [];
+  function gear(x,y,z,R,color){
+    const g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.TorusGeometry(R,.06,6,26), new THREE.MeshBasicMaterial({color, transparent:true, opacity:.7})));
+    for(let i=0;i<8;i++){ const tooth = new THREE.Mesh(new THREE.BoxGeometry(.13*R,.46*R,.1), new THREE.MeshBasicMaterial({color, transparent:true, opacity:.7}));
+      const a = i/8*Math.PI*2; tooth.position.set(Math.cos(a)*R*1.2, Math.sin(a)*R*1.2, 0); tooth.rotation.z = a; g.add(tooth); }
+    g.position.set(x,y,z); scene.add(g); gears.push(g); return g;
+  }
+  gear(roadX(-3)-5, 2.8, -3, 1.3, RED);
+  gear(roadX(-9)+5.5, 3.8, -9, 1.8, INK+0x0a1030);
+  gear(roadX(-14)-4.5, 2.3, -14, 1, CYAN);
+  for(let b=0;b<6;b++){ const z = -17 - b*3;
+    const arch = new THREE.Mesh(new THREE.TorusGeometry(2.2,.025,6,36,Math.PI), new THREE.MeshBasicMaterial({color: b%2?CYAN:RED, transparent:true, opacity:.45}));
+    arch.position.set(roadX(z), .8, z); scene.add(arch); }
+  const synapses = [];
+  function synapse(cx,cy,cz,spread,n){
+    const pos = new Float32Array(n*3);
+    for(let i=0;i<n;i++){ const v = new THREE.Vector3((Math.random()-.5)*spread,(Math.random()-.5)*spread*.7,(Math.random()-.5)*spread); pos[i*3]=v.x; pos[i*3+1]=v.y; pos[i*3+2]=v.z; }
+    const g = new THREE.Group();
+    const pg = new THREE.BufferGeometry(); pg.setAttribute("position", new THREE.BufferAttribute(pos,3));
+    g.add(new THREE.Points(pg, new THREE.PointsMaterial({color:CYAN, size:.12, transparent:true, opacity:.9, map:cyanGlow, blending:THREE.AdditiveBlending, depthWrite:false})));
+    g.position.set(cx,cy,cz); scene.add(g); synapses.push(g); return g;
+  }
+  synapse(roadX(-36)-4, 2.4, -36, 3.4, 20);
+  synapse(roadX(-42)+4, 3, -42, 4, 22);
+  const core = new THREE.Group();
+  const bn = 300, bpos = new Float32Array(bn*3);
+  for(let q=0;q<bn;q++){ const hemi = q<bn/2 ? -1 : 1; const th = Math.random()*Math.PI*2, ph = Math.acos(2*Math.random()-1); const r = 1.7+(Math.random()-.5)*.2;
+    bpos[q*3]=r*Math.sin(ph)*Math.cos(th)*.82+hemi*.42; bpos[q*3+1]=r*Math.sin(ph)*Math.sin(th)*.72; bpos[q*3+2]=r*Math.cos(ph)*.62; }
+  const bg = new THREE.BufferGeometry(); bg.setAttribute("position", new THREE.BufferAttribute(bpos,3));
+  core.add(new THREE.Points(bg, new THREE.PointsMaterial({color:RED, size:.1, transparent:true, opacity:.9, map:redGlow, blending:THREE.AdditiveBlending, depthWrite:false})));
+  core.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(.9,1)), new THREE.LineBasicMaterial({color:CYAN, transparent:true, opacity:.6})));
+  const ring1 = new THREE.Mesh(new THREE.TorusGeometry(2.6,.025,8,60), new THREE.MeshBasicMaterial({color:RED, transparent:true, opacity:.55}));
+  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(3,.018,8,60), new THREE.MeshBasicMaterial({color:CYAN, transparent:true, opacity:.4}));
+  ring1.rotation.x = Math.PI/2.6; ring2.rotation.x = Math.PI/1.7; ring2.rotation.y = .6;
+  core.add(ring1); core.add(ring2);
+  core.position.set(0, 2.6, -58);
+  scene.add(core);
+  const pulses = [];
+  for(let pz=0; pz<5; pz++){ const sp = new THREE.Sprite(new THREE.SpriteMaterial({map: pz%2?cyanGlow:redGlow, transparent:true, opacity:.9, blending:THREE.AdditiveBlending, depthWrite:false}));
+    sp.scale.set(.42,.42,1); sp.userData = {off:pz/5, speed:.03+Math.random()*.02}; scene.add(sp); pulses.push(sp); }
+  const starN = 180, starPos = new Float32Array(starN*3);
+  for(let s=0;s<starN;s++){ starPos[s*3]=(Math.random()-.5)*90; starPos[s*3+1]=2+Math.random()*22; starPos[s*3+2]=10-Math.random()*70; }
+  const starGeo = new THREE.BufferGeometry(); starGeo.setAttribute("position", new THREE.BufferAttribute(starPos,3));
+  scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color:0x8fa4e8, size:.08, transparent:true, opacity:.55, depthWrite:false})));
+  let scrollT = 0, smoothT = 0, tmx = 0, tmy = 0, mx = 0, my = 0;
+  function computeScrollT(){ const wrap = $("workWrap"); if(!wrap) return 0; const total = Math.max(1, wrap.offsetHeight - innerHeight*0.6); const traveled = Math.max(0, window.scrollY); return Math.max(0, Math.min(1, traveled/total)); }
+  function onScroll(){ if($("v-work").classList.contains("active")) scrollT = computeScrollT(); }
+  function onMove(e){ tmx = e.clientX/innerWidth-.5; tmy = e.clientY/innerHeight-.5; }
+  function onResize(){ W = innerWidth; H = innerHeight; camera.aspect = W/H; camera.updateProjectionMatrix(); renderer.setSize(W,H); }
+  window.addEventListener("scroll", onScroll, {passive:true});
+  window.addEventListener("mousemove", onMove, {passive:true});
+  window.addEventListener("resize", onResize);
+  const clock = new THREE.Clock();
+  const state = {raf:null, onScroll, onResize, onMove, renderer};
+  function tick(){
+    state.raf = requestAnimationFrame(tick);
+    if(!$("v-work").classList.contains("active")) return;
+    const t = clock.getElapsedTime();
+    smoothT += (scrollT-smoothT)*0.08; mx += (tmx-mx)*.05; my += (tmy-my)*.05;
+    const u = Math.min(.985, smoothT*.985);
+    const p = curve.getPointAt(u), a = curve.getPointAt(Math.min(.999,u+.02));
+    camera.position.set(p.x+mx*0.9, p.y+.3-my*.4, p.z);
+    camera.lookAt(a.x, a.y+.2, a.z);
+    camera.rotation.z += (a.x-p.x)*-.05 + mx*-.03;
+    gears.forEach((g,i)=>{ g.rotation.z = t*(.3+i*.08)*(i%2?1:-1); });
+    synapses.forEach((s,j)=>{ const sc=1+Math.sin(t*1.6+j*1.7)*.05; s.scale.set(sc,sc,sc); s.rotation.y=t*.08*(j%2?1:-1); });
+    core.rotation.y = t*.15;
+    ring1.rotation.z = t*.2; ring2.rotation.z = -t*.16;
+    pulses.forEach((pu,k)=>{ const pt = (t*pu.userData.speed+pu.userData.off)%1; const pp = curve.getPointAt(pt); pu.position.set(pp.x, pp.y-.05, pp.z); pu.material.opacity = .5+Math.sin(t*6+k)*.35; });
+    renderer.render(scene, camera);
+  }
+  onResize(); tick(); onScroll();
+  holder.style.opacity = "1";
+  caseRoad = state;
+}
+
+/* ---------- PDF report ---------- */
+function generateCasePDF(id){
+  const c = getCase(id); if(!c) return;
+  if(!window.jspdf) return toast("PDF engine still loading — try again in a moment");
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFillColor(227,6,19); doc.rect(0,0,210,22,"F");
+  doc.setTextColor(255); doc.setFont("helvetica","bold"); doc.setFontSize(14);
+  doc.text("NAB KYC — Case Report", 14, 14);
+  doc.setFontSize(9); doc.setFont("helvetica","normal");
+  doc.text(`Generated ${new Date().toLocaleString("en-AU")} by ${S.me}`, 196, 14, {align:"right"});
+  doc.setTextColor(20); doc.setFontSize(16); doc.setFont("helvetica","bold");
+  doc.text(`${c.caseId} — ${c.entity||"(no entity)"}`, 14, 34);
+  doc.setFontSize(10); doc.setFont("helvetica","normal"); doc.setTextColor(90);
+  doc.text(`Risk: ${riskOf(c)}   ·   Health: ${healthOf(c)}%   ·   Ageing: ${ageingOf(c)} days   ·   Next best action: ${nextActionOf(c)}`, 14, 41);
+  doc.autoTable({
+    startY: 47, theme:"grid", styles:{fontSize:9}, headStyles:{fillColor:[16,24,48]},
+    head:[["Field","Value","Field","Value"]],
+    body:[
+      ["ABN", c.abn||"—", "ACN", c.acn||"—"],
+      ["Customer", c.customer||"—", "CN / BCN", `${c.cn||"—"} / ${c.bcn||"—"}`],
+      ["Phone", c.phone||"—", "Email", c.email||"—"],
+      ["Type", caseTypeLabel(c), "Risk / Status", `${riskOf(c)} / ${c.status}`],
+      ["Entered", fmtD(c.entered), "Tags", (c.tags||[]).join(", ")||"—"],
+    ],
+  });
+  if((c.outstandingItems||[]).length){
+    doc.autoTable({ startY: doc.lastAutoTable.finalY + 8, theme:"grid", styles:{fontSize:9}, headStyles:{fillColor:[255,138,61]},
+      head:[["Outstanding items"]], body: c.outstandingItems.map(i=>[i]) });
+  }
+  if((c.calls||[]).length){
+    doc.autoTable({ startY: doc.lastAutoTable.finalY + 8, theme:"striped", styles:{fontSize:8}, headStyles:{fillColor:[227,6,19]},
+      head:[["#","Scenario","Outcome","Duration","When","Notes"]],
+      body: c.calls.map(k=>[k.attempt, k.scenario, k.outcome, k.duration, fmtDT(k.at), (k.notes||"").slice(0,80)]) });
+  }
+  if((c.timeline||[]).length){
+    doc.autoTable({ startY: doc.lastAutoTable.finalY + 8, theme:"striped", styles:{fontSize:8}, headStyles:{fillColor:[16,24,48]},
+      head:[["When","Timeline event"]], body: c.timeline.slice(0,30).map(t=>[fmtDT(t.at), t.text]) });
+  }
+  const safe = (c.entity||"case").replace(/[^A-Za-z0-9]+/g,"_").slice(0,40);
+  doc.save(`NAB_KYC_Case_Report_${c.caseId}_${safe}_${todayISO()}.pdf`);
+  toast("PDF report generated");
+}
+
+/* ---------- call workspace ---------- */
+let activeScenario = null;
+let callTimer = {running:false, start:0, elapsed:0, iv:null};
+
+function renderCallsView(){
+  const sel = $("callCase");
+  const cur = sel.value;
+  sel.innerHTML = S.cases.filter(c=>!["Resolved","Withdrawn"].includes(c.status))
+    .map(c=>`<option value="${c.id}">${esc(c.caseId)} — ${esc(c.entity||c.customer||"case")}</option>`).join("") || `<option value="">No active cases</option>`;
+  // preselect: an explicitly requested case, else whatever was already chosen,
+  // else the case currently open in Work Case
+  if(pendingCallCaseId && [...sel.options].some(o=>o.value===pendingCallCaseId)){
+    sel.value = pendingCallCaseId; pendingCallCaseId = null;
+  }
+  else if(cur && [...sel.options].some(o=>o.value===cur)) sel.value = cur;
+  else if(currentCaseId && [...sel.options].some(o=>o.value===currentCaseId)) sel.value = currentCaseId;
+  renderCallWorkspace();
+}
+/* jump straight into the Calls view with a specific case preselected */
+let pendingCallCaseId = null;
+function openCallForCase(id){ pendingCallCaseId = id; go("calls"); }
+function renderCallWorkspace(){
+  $("callScenarios").innerHTML = CALL_SCENARIOS.map(s=>
+    `<button class="cf-btn ${activeScenario===s?"on":""}" onclick="pickScenario('${s}')">${s}</button>`).join("");
+  const c = getCase($("callCase").value);
+  const plan = c ? nextContactPlan(c) : null;
+  $("callHint").textContent = c ? `Attempt #${(c.calls?.length||0)+1} for ${c.caseId} · contact attempts so far: ${c.contactAttempts||0} · next stage: ${plan.stage} (${fmtDT(plan.at.toISOString())})` : "";
+  $("callScript").textContent = activeScenario ? fillTemplate(CALL_SCRIPTS[activeScenario], c) : "Pick a scenario above to load the call script.";
+  $("callRecentList").innerHTML = c && (c.calls||[]).length ? c.calls.slice(0,8).map(k=>`
+    <div class="case-call-row">
+      <div class="cc-top">
+        <div><b>#${k.attempt}</b> ${esc(k.scenario)} → <span style="color:var(--cyan)">${esc(k.outcome)}</span></div>
+        <div class="mono muted" style="font-size:10.5px">${fmtDT(k.at)} · ${k.duration}</div>
+      </div>
+      ${k.notes ? `<div class="cc-notes">📝 ${esc(k.notes)}</div>` : ""}
+      <div class="cc-flags">
+        <span class="${k.opportunityConfirmed?"on":""}">${k.opportunityConfirmed?"✔":"○"} Opportunity</span>
+        ${!k.answered ? `<span class="${k.emailSent?"on":""}">${k.emailSent?"✔":"○"} Email sent</span>` : ""}
+      </div>
+    </div>`).join("") : `<div class="empty">${c ? "No calls logged for this case yet." : "Pick a case to see its call history."}</div>`;
+}
+function pickScenario(s){
+  activeScenario = s;
+  if(s==="No answer") $("callOutcome").value = "No answer";
+  if(s==="Fraud alert") $("callOutcome").value = "Fraud alert raised";
+  if(s==="eKYC consent") $("callOutcome").value = "eKYC consent captured";
+  if(s==="Failed authentication") $("callOutcome").value = "Failed authentication";
+  renderCallWorkspace();
+}
+function toggleTimer(){
+  if(callTimer.running){
+    clearInterval(callTimer.iv); callTimer.running = false; callTimer.elapsed += Date.now() - callTimer.start;
+    $("timerBtn").textContent = "▶ Resume"; $("timerBox").classList.remove("live");
+  } else {
+    callTimer.running = true; callTimer.start = Date.now();
+    $("timerBtn").textContent = "⏸ Pause"; $("timerBox").classList.add("live");
+    callTimer.iv = setInterval(updateTimer, 500);
+  }
+}
+function updateTimer(){
+  const ms = callTimer.elapsed + (callTimer.running ? Date.now()-callTimer.start : 0);
+  const s = Math.floor(ms/1000);
+  $("timerBox").textContent = String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+}
+function resetTimer(){
+  clearInterval(callTimer.iv); callTimer = {running:false,start:0,elapsed:0,iv:null};
+  $("timerBox").textContent = "00:00"; $("timerBox").classList.remove("live"); $("timerBtn").textContent = "▶ Start";
+}
+
+/* submitting a call advances the contact-stage per the timing rules:
+   ASAP -> +4 business hours -> next business day -> pre-withdrawal */
+function submitCall(){
+  const c = getCase($("callCase").value);
+  if(!c) return toast("Pick a case first");
+  if(!activeScenario) return toast("Pick a call scenario");
+  if(callTimer.running) toggleTimer();
+  const ms = callTimer.elapsed;
+  const dur = String(Math.floor(ms/60000)).padStart(2,"0")+":"+String(Math.floor(ms/1000)%60).padStart(2,"0");
+  const outcome = $("callOutcome").value;
+  const unanswered = ["No answer","Voicemail left"].includes(outcome);
+  const call = {
+    id: uid(), attempt: (c.calls?.length||0)+1, scenario: $("callDirection").value + " · " + activeScenario,
+    outcome, duration: dur, notes: $("callNotes").value.trim(), at: new Date().toISOString(),
+    nextCallback: $("callNextCb").value || null, answered: !unanswered, opportunityConfirmed: false,
+  };
+  c.calls.unshift(call);
+  touch(c, `Call #${call.attempt} — ${call.scenario} → ${outcome} (${dur})`);
+
+  if(unanswered){
+    const plan = nextContactPlan(c, new Date());
+    c.contactAttempts = (c.contactAttempts||0) + 1;
+    c.pendHistory.push({attempt:c.contactAttempts, at:call.at});
+    if(plan.stage === "Pre-Withdrawal Sent"){
+      c.status = "Pre-Withdrawal Sent";
+      touch(c, `Final attempt unanswered — Pre-Withdrawal Sent`);
+      toast(c.caseId+" moved to Pre-Withdrawal Sent");
+    } else {
+      c.status = plan.stage;
+      const nextPlan = nextContactPlan(c, new Date());
+      call.nextCallback = call.nextCallback || nextPlan.at.toISOString();
+      touch(c, `Status → ${plan.stage} · next attempt scheduled ${fmtDT(nextPlan.at.toISOString())}`);
+    }
+  }
+  if(outcome==="Fraud alert raised"){ c.flags.fraud = true; touch(c,"Fraud flag raised from call"); }
+  if(call.nextCallback){
+    c.callbacks.push({id:uid(), at:new Date(call.nextCallback).toISOString(), reason:"From call #"+call.attempt+" — "+outcome, done:false, notified:{}});
+  }
+  $("callNotes").value = ""; $("callNextCb").value = ""; resetTimer();
+  toast("Call logged to "+c.caseId); save(); renderCallWorkspace();
+}
+
+/* ---------- case notes, filterable by situation ---------- */
+const SITUATIONS = ["General","Trust structure","Documents outstanding","Fraud / risk","Customer dispute","eKYC","PDF extraction","Action pack"];
+let activeSituation = null;
+
+function populateCaseSelects(){
+  const opts = S.cases.map(c=>`<option value="${c.id}">${esc(c.caseId)} — ${esc(c.entity||c.customer||"case")}</option>`).join("");
+  const curNote = $("noteCase").value, curTpl = $("tplCase").value;
+  $("noteCase").innerHTML = opts || `<option value="">No cases yet</option>`;
+  $("tplCase").innerHTML = `<option value="">Personalise with case…</option>` + opts;
+  if(curNote && getCase(curNote)) $("noteCase").value = curNote;
+  else if(currentCaseId && getCase(currentCaseId)) $("noteCase").value = currentCaseId;
+  if(curTpl && getCase(curTpl)) $("tplCase").value = curTpl;
+  else if(currentCaseId && getCase(currentCaseId)) $("tplCase").value = currentCaseId;
+}
+
+function renderCaseNotes(){
+  const c = getCase($("noteCase").value);
+  $("situationTabs").innerHTML = SITUATIONS.map(s=>
+    `<button class="${activeSituation===s?"active":""}" onclick="setSituation(${s?JSON.stringify(s):null})">${esc(s)}</button>`
+  ).join("") + `<button class="${activeSituation===null?"active":""}" onclick="setSituation(null)" style="order:-1">All</button>`;
+
+  if(!c){ $("caseNotesList").innerHTML = `<div class="empty">Pick a case above to see its notes.</div>`; return; }
+  let notes = c.notes || [];
+  if(activeSituation) notes = notes.filter(n => (n.situation||"General") === activeSituation);
+  $("caseNotesList").innerHTML = notes.length ? notes.map(n=>`
+    <div class="note-row"><div class="grow">${n.situation?`<span class="tag" style="font-size:10px">${esc(n.situation)}</span><br>`:""}<span style="white-space:pre-wrap">${esc(n.text)}</span></div>
+    <div class="mono muted" style="font-size:10.5px;white-space:nowrap">${fmtDT(n.at)}<br>${esc(n.by||"")}</div></div>`).join("")
+    : `<div class="empty">No notes${activeSituation?` for "${esc(activeSituation)}"`:""} on this case yet.</div>`;
+}
+function setSituation(s){ activeSituation = s; renderCaseNotes(); }
+function addNoteForSelectedCase(){
+  const c = getCase($("noteCase").value);
+  if(!c) return toast("Pick a case first");
+  const v = $("wcNote").value.trim(); if(!v) return;
+  const situation = $("wcNoteSituation").value;
+  c.notes.unshift({at:new Date().toISOString(), by:S.me, situation, text:v});
+  touch(c,"Note added ("+situation+")");
+  $("wcNote").value = "";
+  save(); renderCaseNotes();
+  toast("Note added to "+c.caseId);
+}
+
+/* ---------- template library ---------- */
+function fillTemplate(body, c){
+  if(!c) return body;
+  return body.replaceAll("[SBOO]", S.me).replaceAll("[Entity name]", c.entity||"—").replaceAll("[Customer name]", c.customer||"the customer")
+    .replaceAll("[ABN]", c.abn||"—").replaceAll("[Phone]", c.phone||"—").replaceAll("[Case ID]", c.caseId)
+    .replaceAll("{date}", fmtD(addDays(todayISO(),5))).replaceAll("{closure date}", fmtD(addDays(todayISO(),10)));
+}
+function renderTemplates(){
+  const cats = [...new Set(TEMPLATES.map(t=>t.cat))];
+  const catSel = $("tplCat");
+  if(catSel.options.length<=1) catSel.innerHTML = `<option value="">All categories</option>` + cats.map(c=>`<option>${c}</option>`).join("");
+  const q = $("tplSearch").value.trim().toLowerCase();
+  const cat = catSel.value;
+  const c = getCase($("tplCase").value);
+  const list = TEMPLATES.filter(t=>(!cat||t.cat===cat) && (!q||(t.title+t.body+t.cat).toLowerCase().includes(q)));
+  $("tplList").innerHTML = list.map((t,i)=>{
+    const filled = fillTemplate(t.body, c);
+    return `<div class="tpl-card">
+      <h5>${esc(t.title)} <span class="tag">${esc(t.cat)}</span></h5>
+      <div class="tpl-body" id="tpl-${i}">${esc(filled)}</div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn-ghost btn-sm" onclick="copyText(document.getElementById('tpl-${i}').textContent);toast('Template copied')">Copy</button>
+        ${c?`<button class="btn-ghost btn-sm" onclick="tplToNotes(${i})">Add to case notes</button>`:""}
+      </div>
+    </div>`;
+  }).join("") || `<div class="empty">No templates match.</div>`;
+}
+function tplToNotes(i){
+  const c = getCase($("tplCase").value); if(!c) return;
+  c.notes.unshift({at:new Date().toISOString(), by:S.me, situation:"General", text:$("tpl-"+i).textContent});
+  touch(c,"Template added to notes"); toast("Added to "+c.caseId); save();
+  if($("noteCase").value === c.id) renderCaseNotes();
+}
+
+/* ---------- seed + init ---------- */
+function seedIfEmpty(){
+  if(S.cases.length) return;
+  const mk = (over, days) => { const c = newCase(over); S.seq++; c.entered = addDays(todayISO(), -days); return c; };
+  const a = mk({entity:"Meridian Holdings Pty Ltd SBC", abn:"51824753556", acn:"824753556", customer:"Daniel Whitford",
+    dob:"1979-03-14", phone:"+61 412 555 018", email:"d.whitford@meridianholdings.com.au", status:"2nd Contact", tags:["trust","complex"]}, 12);
+  a.contactAttempts = 2; a.flags.complexEntity = true;
+  a.documents = [{name:"Certified trust deed",type:"Trust deed",status:"Requested"},{name:"Director ID — D. Whitford",type:"ID",status:"Verified"}];
+  a.checklist[CHECKLIST_ITEMS[0]] = true; a.checklist[CHECKLIST_ITEMS[1]] = true;
+  a.calls = [{id:uid(),attempt:1,scenario:"Outbound · Outbound — first contact",outcome:"Connected — verified",duration:"07:42",notes:"Explained requirements, customer to send deed.",at:new Date(Date.now()-86400000*6).toISOString(),nextCallback:null,answered:true,opportunityConfirmed:false},
+             {id:uid(),attempt:2,scenario:"Outbound · No answer",outcome:"No answer",duration:"00:31",notes:"VM left — name & number only.",at:new Date(Date.now()-86400000*2).toISOString(),nextCallback:null,answered:false,opportunityConfirmed:false}];
+  a.callbacks = [{id:uid(), at:new Date(Date.now()+86400000).toISOString(), reason:"Chase trust deed", done:false, notified:{}}];
+  a.notes = [{at:new Date(Date.now()-86400000*6).toISOString(), by:S.me, situation:"Trust structure", text:"Complex discretionary trust structure — two corporate trustees. Deed variation 2019 must be sighted."}];
+  a.timeline = [{at:a.createdAt,text:"Case created"},{at:new Date(Date.now()-86400000*2).toISOString(),text:"2nd contact attempt logged"}];
+  a.updatedAt = new Date(Date.now()-86400000*3).toISOString();
+
+  const b = mk({entity:"Halcyon Fresh Produce Pty Ltd SSOO", abn:"83914571220", customer:"Sarah Lim",
+    dob:"1991-07-02", phone:"+61 402 118 733", email:"sarah@halcyonfresh.com.au", status:"Pending - Customer Info"}, 4);
+  b.documents = [{name:"ASIC company extract",type:"ASIC extract",status:"Verified"}];
+  CHECKLIST_ITEMS.slice(0,5).forEach(k=>b.checklist[k]=true);
+  b.callbacks = [{id:uid(), at:new Date(new Date().setHours(15,0,0,0)).toISOString(), reason:"Confirm UBO details", done:false, notified:{}}];
+  b.timeline = [{at:b.createdAt,text:"Case created"}];
+
+  const d = mk({entity:"Crimson Tide Logistics Pty Ltd SBC", abn:"29551873664", customer:"Marcus Bell",
+    dob:"1985-11-23", phone:"+61 433 902 441", status:"Pre-Withdrawal Sent"}, 18);
+  d.contactAttempts = 3;
+  d.timeline = [{at:d.createdAt,text:"Case created — name screening hit pending review"}];
+
+  const e2 = mk({entity:"Bellbird Cafe Group SSOO", abn:"77120943358", customer:"Anita Rao",
+    dob:"1988-05-30", phone:"+61 401 776 254", email:"anita@bellbird.cafe", status:"Sent to Pre Check"}, 9);
+  CHECKLIST_ITEMS.forEach(k=>e2.checklist[k]=true);
+  e2.documents = [{name:"Driver licence — A. Rao",type:"ID",status:"Verified"},{name:"Partnership agreement",type:"Other",status:"Verified"}];
+  e2.timeline = [{at:e2.createdAt,text:"Case created"},{at:new Date().toISOString(),text:"Checklist completed — moved to Pre Check"}];
+
+  const f = mk({entity:"Ashgrove Timber Co SBC", abn:"64220118837", customer:"Liam Carter",
+    dob:"1975-01-09", phone:"+61 419 663 208", status:"Sent to QC"}, 7);
+  CHECKLIST_ITEMS.forEach(k=>f.checklist[k]=true);
+  f.timeline = [{at:f.createdAt,text:"Case created"},{at:new Date(Date.now()-86400000).toISOString(),text:"Status → Sent to QC"}];
+
+  const g = mk({entity:"Northlake Dental Group SSOO", abn:"38771002456", customer:"Priya Menon",
+    dob:"1993-09-17", phone:"+61 404 512 890", status:"Resolved"}, 25);
+  g.qcPassed = true;
+  CHECKLIST_ITEMS.forEach(k=>g.checklist[k]=true);
+  g.timeline = [{at:g.createdAt,text:"Case created"},{at:new Date(Date.now()-86400000*2).toISOString(),text:"Status → Resolved"}];
+
+  const h = mk({entity:"Outback Fleet Solutions SBC", abn:"91442017785", customer:"Grace Nolan",
+    dob:"1982-02-18", phone:"+61 411 220 998", status:"Outstanding"}, 6);
+  h.outstandingItems = ["Trust deed","ASIC to be updated"];
+  h.timeline = [{at:h.createdAt,text:"Case created"},{at:new Date().toISOString(),text:"Marked Outstanding — Trust deed, ASIC to be updated"}];
+
+  S.cases.push(a,b,d,e2,f,g,h);
+  save();
+}
+
+
+/* =====================================================================
+   UNIFIED APP SHELL — navigation across all views, single renderAll,
+   one scroll-reveal system, one ambient background, one init sequence.
+   ===================================================================== */
+
+let navHistory = [];
+let currentView = "dashboard";
+let currentCaseId = null;
+
+function go(view, caseId, opts={}){
+  if(!opts.isBack && view!==currentView){ navHistory.push({view: currentView, caseId: currentCaseId}); }
+  if(caseId) currentCaseId = caseId;
+  currentView = view;
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  const el = $("v-"+view);
+  if(!el) return;
+  el.classList.add("active");
+  el.style.animation = "none"; void el.offsetWidth; el.style.animation = "viewIn .5s cubic-bezier(.16,.9,.3,1.05)";
+  document.querySelectorAll("#sideNav button").forEach(b=>b.classList.toggle("active", b.dataset.v===view));
+  document.querySelectorAll(".page-nav button").forEach(b=>b.classList.toggle("active", b.dataset.v===view));
+
+  if(view==="dashboard") renderDashboard();
+  if(view==="cases"){ refreshFilterOptions(); renderCases(); }
+  if(view==="work") renderWork();
+  if(view==="calls") renderCallsView();
+  if(view==="notes") renderNotesPage();
+  if(view==="board") renderBoard();
+  if(view==="calendar") renderCalendar();
+  if(view==="insights") renderInsights();
+
+  document.body.classList.remove("scrolled");
+  window.scrollTo({top:0, behavior:"smooth"});
+  requestAnimationFrame(initScrollReveal);
+  if(view==="work") requestAnimationFrame(()=>requestAnimationFrame(initCaseRoad));
+  else teardownCaseRoad();
+  updateBackButton();
+}
+function updateBackButton(){
+  const btn = $("backBtn");
+  if(!btn) return;
+  btn.style.display = navHistory.length ? "inline-flex" : "none";
+}
+function goBack(){
+  save();
+  const prev = navHistory.pop();
+  if(!prev){ updateBackButton(); return; }
+  go(prev.view, prev.caseId, {isBack:true});
+  updateBackButton();
+}
+
+/* ---------- side panel ---------- */
+function openSidePanel(){ $("sideOverlay").classList.add("open"); }
+function closeSidePanel(){ $("sideOverlay").classList.remove("open"); $("sideOverlay").classList.remove("hover-open"); }
+let sideHoverTimer = null;
+function armSideHover(){
+  clearTimeout(sideHoverTimer);
+  if(!$("sideOverlay").classList.contains("open")) $("sideOverlay").classList.add("hover-open");
+}
+function disarmSideHover(){
+  clearTimeout(sideHoverTimer);
+  sideHoverTimer = setTimeout(()=>{
+    if(!$("sidePanel").matches(":hover") && !$("hamburgerBtn").matches(":hover")) $("sideOverlay").classList.remove("hover-open");
+  }, 260);
+}
+(function initSideHover(){
+  const btn = $("hamburgerBtn"), panel = $("sidePanel");
+  if(!btn || !panel) return;
+  const fine = window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches;
+  if(!fine) return;
+  btn.addEventListener("mouseenter", armSideHover);
+  btn.addEventListener("mouseleave", disarmSideHover);
+  panel.addEventListener("mouseenter", ()=>clearTimeout(sideHoverTimer));
+  panel.addEventListener("mouseleave", disarmSideHover);
+})();
+
+/* ---------- header fade on scroll ---------- */
+let scrolledState = false;
+window.addEventListener("scroll", ()=>{
+  const should = window.scrollY > 40;
+  if(should !== scrolledState){ scrolledState = should; document.body.classList.toggle("scrolled", should); }
+}, {passive:true});
+
+/* ---------- global search ---------- */
+$("gsearch").addEventListener("input", e=>{
+  const q = e.target.value.trim().toLowerCase();
+  const box = $("gsResults");
+  if(!q){ box.classList.remove("open"); box.innerHTML=""; return; }
+  const hits = S.cases.filter(c =>
+    (c.caseId||"").toLowerCase().includes(q) || (c.entity||"").toLowerCase().includes(q) ||
+    (c.abn||"").replace(/\s/g,"").includes(q.replace(/\s/g,""))
+  ).slice(0,8);
+  box.innerHTML = hits.length ? hits.map(c=>
+    `<div class="gs-item" onclick="openWork('${c.id}')"><b>${esc(c.caseId)}</b>${esc(c.entity||"(no entity)")} <span class="muted">· ABN ${esc(c.abn||"—")}</span></div>`
+  ).join("") : `<div class="gs-item muted">No matches</div>`;
+  box.classList.add("open");
+});
+document.addEventListener("click", e=>{ if(!e.target.closest(".gsearch")) $("gsResults").classList.remove("open"); });
+function openWork(id){ $("gsResults").classList.remove("open"); $("gsearch").value=""; go("work", id); }
+document.querySelectorAll(".overlay").forEach(o=>o.addEventListener("click",e=>{ if(e.target===o) o.classList.remove("open"); }));
+
+/* ---------- notes page (wraps the notes-view renderers) ---------- */
+function renderNotesPage(){
+  populateCaseSelects();
+  renderCaseNotes();
+  renderTemplates();
+}
+
+/* ---------- scroll reveal ---------- */
+let revealObs = null;
+function initScrollReveal(){
+  const fresh = [];
+  document.querySelectorAll(".view.active .panel, .view.active .kpi, .view.active .bcard, .view.active .tpl-card, .view.active .reveal, .brand-footer").forEach((el,i)=>{
+    el.classList.remove("in");
+    el.classList.add("reveal","reveal-stagger");
+    el.style.setProperty("--i", i % 10);
+    fresh.push(el);
+  });
+  if(!revealObs){
+    revealObs = new IntersectionObserver(entries=>{
+      entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add("in"); revealObs.unobserve(en.target); } });
+    }, {threshold:0.08, rootMargin:"0px 0px -30px 0px"});
+  }
+  void document.body.offsetHeight;
+  requestAnimationFrame(()=>{ fresh.forEach(el=>revealObs.observe(el)); });
+  clearTimeout(initScrollReveal._safety);
+  initScrollReveal._safety = setTimeout(()=>{
+    document.querySelectorAll(".reveal:not(.in)").forEach(el=>el.classList.add("in"));
+  }, 1200);
+}
+
+/* ---------- ambient background ---------- */
+function initAmbientFx(){
+  const cv = $("pageFx"); if(!cv) return;
+  const ctx = cv.getContext("2d");
+  let W, H, dpr = Math.min(devicePixelRatio||1, 2);
+  let nodes = [], gears = [];
+  let mouseX = 0.5, mouseY = 0.5, targetMX = 0.5, targetMY = 0.5;
+  let scrollY = 0;
+  function size(){
+    W = cv.width = window.innerWidth * dpr; H = cv.height = window.innerHeight * dpr;
+    cv.style.width = window.innerWidth+"px"; cv.style.height = window.innerHeight+"px";
+    const count = Math.round((window.innerWidth*window.innerHeight) / 42000);
+    nodes = [...Array(Math.min(60,Math.max(24,count)))].map(()=>({
+      x:Math.random()*W, y:Math.random()*H, z:Math.random()*0.7+0.3,
+      vx:(Math.random()-0.5)*0.12, vy:(Math.random()-0.5)*0.12,
+      pulse: Math.random()*Math.PI*2, pulseSpeed: 0.008+Math.random()*0.014,
+      kind: Math.random()<0.22 ? "gear" : "node",
+    }));
+    gears = [
+      {x:W*0.14, y:H*0.18, r:70*dpr, teeth:10, speed:0.0025, hue:355},
+      {x:W*0.90, y:H*0.30, r:52*dpr, teeth:8, speed:-0.0035, hue:190},
+      {x:W*0.80, y:H*0.86, r:90*dpr, teeth:12, speed:0.0018, hue:355},
+      {x:W*0.08, y:H*0.78, r:46*dpr, teeth:7, speed:-0.004, hue:255},
+    ];
+  }
+  size(); window.addEventListener("resize", size);
+  window.addEventListener("mousemove", e=>{ targetMX = e.clientX/window.innerWidth; targetMY = e.clientY/window.innerHeight; });
+  window.addEventListener("scroll", ()=>{ scrollY = window.scrollY; }, {passive:true});
+  function drawGear(g, t){
+    const angle = t*g.speed;
+    ctx.save();
+    ctx.translate(g.x + (mouseX-0.5)*24*dpr, g.y + (mouseY-0.5)*18*dpr + Math.sin(scrollY*0.002+g.x)*6*dpr);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    const teeth = g.teeth, rOuter = g.r, rInner = g.r*0.74;
+    for(let i=0;i<teeth*2;i++){ const a=(Math.PI*2/(teeth*2))*i; const rr=i%2===0?rOuter:rInner; const px=Math.cos(a)*rr, py=Math.sin(a)*rr; i===0?ctx.moveTo(px,py):ctx.lineTo(px,py); }
+    ctx.closePath();
+    ctx.strokeStyle = `hsla(${g.hue}, 85%, 62%, 0.16)`; ctx.lineWidth = 1.4*dpr; ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0, g.r*0.22, 0, Math.PI*2);
+    ctx.strokeStyle = `hsla(${g.hue}, 85%, 62%, 0.22)`; ctx.stroke();
+    ctx.restore();
+  }
+  let t = 0;
+  (function tick(){
+    t++;
+    mouseX += (targetMX-mouseX)*0.03; mouseY += (targetMY-mouseY)*0.03;
+    ctx.clearRect(0,0,W,H);
+    gears.forEach(g=>drawGear(g,t));
+    const parX = (mouseX-0.5)*30*dpr, parY = (mouseY-0.5)*20*dpr;
+    nodes.forEach(n=>{
+      n.x += n.vx*n.z; n.y += n.vy*n.z; n.pulse += n.pulseSpeed;
+      if(n.x<-40)n.x=W+40; if(n.x>W+40)n.x=-40; if(n.y<-40)n.y=H+40; if(n.y>H+40)n.y=-40;
+    });
+    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+      const a=nodes[i], b=nodes[j], dx=a.x-b.x, dy=a.y-b.y, d2=dx*dx+dy*dy, maxD=150*150*dpr*dpr;
+      if(d2 < maxD){
+        const alpha = (1-d2/maxD) * 0.10 * Math.min(a.z,b.z);
+        ctx.strokeStyle = `rgba(120,170,255,${alpha})`; ctx.lineWidth = 1*dpr;
+        ctx.beginPath(); ctx.moveTo(a.x+parX*a.z, a.y+parY*a.z); ctx.lineTo(b.x+parX*b.z, b.y+parY*b.z); ctx.stroke();
+      }
+    }
+    nodes.forEach(n=>{
+      const glow = 0.5 + Math.sin(n.pulse)*0.5;
+      const x = n.x+parX*n.z, y = n.y+parY*n.z;
+      const isRed = n.kind==="gear"; const hue = isRed?355:195; const r = (isRed?2.2:1.6)*n.z*dpr;
+      ctx.beginPath(); ctx.arc(x, y, r*2.6, 0, Math.PI*2); ctx.fillStyle = `hsla(${hue}, 90%, 65%, ${0.05*glow*n.z})`; ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fillStyle = `hsla(${hue}, 95%, 70%, ${(0.35+0.35*glow)*n.z})`; ctx.fill();
+    });
+    requestAnimationFrame(tick);
+  })();
+}
+
+/* ---------- single renderAll for every view ---------- */
+function renderAll(){
+  if(currentView==="dashboard") renderDashboard();
+  if(currentView==="cases"){ refreshFilterOptions(); renderCases(); }
+  if(currentView==="work") renderWork();
+  if(currentView==="calls") renderCallsView();
+  if(currentView==="notes") renderNotesPage();
+  if(currentView==="board") renderBoard();
+  if(currentView==="calendar") renderCalendar();
+  if(currentView==="insights") renderInsights();
+  const cnt = $("navCaseCnt"); if(cnt) cnt.textContent = S.cases.length || "";
+  if($("setMe")) $("setMe").value = S.me;
+  setSaved(!memOnly, memOnly ? "In-memory only" : "Saved");
+  requestAnimationFrame(initScrollReveal);
+}
+
+/* ---------- init ---------- */
+loadState();
+seedIfEmpty();
+refreshFilterOptions();
+onDurationChange(); // sets duration controls, then renders the dashboard via renderAll()
+setSaved(!memOnly, memOnly ? "In-memory only" : "Saved");
+updateBackButton();
+requestAnimationFrame(initScrollReveal);
+requestAnimationFrame(()=>requestAnimationFrame(initAmbientFx));
+</script>
+</body>
+</html>
