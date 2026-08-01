@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MachineMind Links</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #0a0a0f;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #e8e8ef;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      overflow-x: hidden;
+    }
+
+    /* subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #a5b4fc, #c4b5fd, #f0abfc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+      z-index: 1;
+    }
+
+    .subtitle {
+      color: #8b8ba0;
+      font-size: 0.95rem;
+      margin-bottom: 48px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 28px;
+      max-width: 1100px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card {
+      background: rgba(20, 20, 30, 0.85);
+      border: 1px solid rgba(99, 102, 241, 0.18);
+      border-radius: 20px;
+      padding: 36px 24px 28px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 0%, var(--glow), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-10px) scale(1.03);
+      border-color: var(--accent);
+      box-shadow: 
+        0 20px 40px -12px rgba(0,0,0,0.5),
+        0 0 30px -5px var(--glow);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -0.04em;
+      position: relative;
+      z-index: 2;
+      transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .card:hover .logo {
+      transform: scale(1.12) rotate(-3deg);
+    }
+
+    .name {
+      font-size: 1.15rem;
+      font-weight: 600;
+      position: relative;
+      z-index: 2;
+    }
+
+    .desc {
+      font-size: 0.8rem;
+      color: #9a9ab0;
+      text-align: center;
+      line-height: 1.4;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* individual accent colors */
+    .mm     { --accent: #818cf8; --glow: rgba(129,140,248,0.35); }
+    .mwork  { --accent: #34d399; --glow: rgba(52,211,153,0.35); }
+    .mvision{ --accent: #a78bfa; --glow: rgba(167,139,250,0.35); }
+    .mcrm   { --accent: #f472b6; --glow: rgba(244,114,182,0.35); }
+    .mscript{ --accent: #38bdf8; --glow: rgba(56,189,248,0.35); }
+
+    .mm .logo {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      box-shadow: 0 8px 24px rgba(79,70,229,0.4);
+    }
+    .mwork .logo {
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: white;
+      box-shadow: 0 8px 24px rgba(5,150,105,0.4);
+    }
+    .mvision .logo {
+      background: linear-gradient(135deg, #7c3aed, #a855f7);
+      color: white;
+      box-shadow: 0 8px 24px rgba(124,58,237,0.4);
+    }
+    .mcrm .logo {
+      background: linear-gradient(135deg, #db2777, #ec4899);
+      color: white;
+      box-shadow: 0 8px 24px rgba(219,39,119,0.4);
+    }
+    .mscript .logo {
+      background: linear-gradient(135deg, #0284c7, #0ea5e9);
+      color: white;
+      box-shadow: 0 8px 24px rgba(2,132,199,0.4);
+    }
+
+    /* pulse ring on hover */
+    .logo::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 22px;
+      border: 2px solid var(--accent);
+      opacity: 0;
+      transform: scale(0.9);
+      transition: all 0.4s ease;
+    }
+    .card:hover .logo::after {
+      opacity: 0.6;
+      transform: scale(1.15);
+    }
+
+    footer {
+      margin-top: 56px;
+      font-size: 0.8rem;
+      color: #5a5a70;
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>MachineMind</h1>
+  <p class="subtitle">Quick links · Interactive logos</p>
+
+  <div class="grid">
+    <!-- 1. Main site -->
+    <a class="card mm" href="https://machinemind.in/" target="_blank" rel="noopener">
+      <div class="logo">MM</div>
+      <div class="name">MachineMind</div>
+      <div class="desc">Where Machines Learn to Think</div>
+    </a>
+
+    <!-- 2. M-Work -->
+    <a class="card mwork" href="https://machinemind.in/mwork/" target="_blank" rel="noopener">
+      <div class="logo">MW</div>
+      <div class="name">M-Working</div>
+      <div class="desc">Placement Register</div>
+    </a>
+
+    <!-- 3. M-Vision -->
+    <a class="card mvision" href="https://machinemind.in/mvision/" target="_blank" rel="noopener">
+      <div class="logo">MV</div>
+      <div class="name">M-Vision</div>
+      <div class="desc">Personal Neural Board</div>
+    </a>
+
+    <!-- 4. M-CRM -->
+    <a class="card mcrm" href="https://machinemind.in/Mcrm/" target="_blank" rel="noopener">
+      <div class="logo">MC</div>
+      <div class="name">M-CRM</div>
+      <div class="desc">NAB KYC Production CRM</div>
+    </a>
+
+    <!-- 5. M-Script -->
+    <a class="card mscript" href="https://machinemind.in/mscript/" target="_blank" rel="noopener">
+      <div class="logo">MS</div>
+      <div class="name">M-Script</div>
+      <div class="desc">Callback Helper</div>
+    </a>
+  </div>
+
+  <footer>machinemind.in · all products</footer>
+</body>
+</html>
