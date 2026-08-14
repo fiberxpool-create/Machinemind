@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JPIX Drive — Luxury Showroom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800;900&family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070B14; --bg2:#0B1120; --panel:rgba(255,255,255,.045); --panel2:rgba(255,255,255,.08);
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+  --ink:#E8ECF4; --dim:#8B96AB; --faint:#5A6478;
+  --red:#FF3B4E; --nab:#E30613; --amber:#FFB020; --green:#2FD57C; --cyan:#3ED2E8; --violet:#8B7BFF;
+  --glow-red:0 0 22px rgba(255,59,78,.45); --glow-amber:0 0 22px rgba(255,176,32,.4); --glow-green:0 0 22px rgba(47,213,124,.4);
+  --r:16px; --glass-blur:18px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+html,body{margin:0;background:
+  radial-gradient(900px 500px at 12% 8%, rgba(227,6,19,.08), transparent 60%),
+  radial-gradient(1200px 700px at 82% 0%, rgba(62,140,232,.10), transparent 55%),
+  radial-gradient(1000px 900px at 50% 100%, rgba(139,123,255,.07), transparent 60%),
+  var(--bg);
+  background-attachment:fixed;min-height:100vh;color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;font-weight:500;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{padding-bottom:80px}
+h1,h2,h3,h4,h5,strong,b{color:#fff}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:6px}
+button{cursor:pointer;font-family:'Inter',sans-serif}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+a{color:var(--cyan)}
+
+.reveal{opacity:0;transform:translateY(28px) scale(.985);transition:opacity .7s cubic-bezier(.16,.8,.3,1),transform .7s cubic-bezier(.16,.8,.3,1)}
+.reveal.in{opacity:1;transform:translateY(0) scale(1)}
+.reveal-stagger.in{transition-delay:calc(var(--i,0)*70ms)}
+
+/* topbar */
+.topbar{position:sticky;top:0;z-index:40;background:#000;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.topbar-inner{display:flex;align-items:center;gap:18px;padding-left:8px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(145deg,#FF3B4E,#C40010);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:900;font-size:15px;color:#fff;box-shadow:0 0 20px rgba(227,6,19,.4)}
+.logo-word{font-family:'Sora',sans-serif;font-weight:800;font-size:20px;letter-spacing:-.02em;color:#fff}
+.logo-tag{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.top-actions{display:flex;gap:10px;align-items:center;margin-left:auto;flex-wrap:wrap}
+.btn{padding:9px 16px;border-radius:10px;border:none;font-weight:700;font-size:13px;color:#fff;
+  background:linear-gradient(145deg,#FF3B4E,#C40010);box-shadow:0 8px 20px rgba(227,6,19,.35),inset 0 1px 0 rgba(255,255,255,.3);
+  transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(227,6,19,.45)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn-cyan{background:linear-gradient(145deg,#3ED2E8,#0E8FA6);box-shadow:0 8px 20px rgba(62,210,232,.28),inset 0 1px 0 rgba(255,255,255,.3)}
+.btn-ghost{padding:8px 14px;border-radius:10px;border:1px solid var(--line2);background:var(--panel);color:var(--dim);font-weight:600;font-size:13px;
+  backdrop-filter:blur(8px);transition:.2s}
+.btn-ghost:hover{color:var(--ink);border-color:rgba(255,255,255,.3);transform:translateY(-1px)}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:8px}
+.btn-danger{border-color:rgba(255,59,78,.4);color:var(--red)}
+.saved-pill{display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:99px;border:1px solid var(--line2);
+  background:var(--panel);font-size:12px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+.saved-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:var(--glow-green)}
+.saved-dot.dirty{background:var(--amber);box-shadow:var(--glow-amber)}
+
+/* hero */
+.hero{padding:48px 26px 28px;text-align:center;position:relative;z-index:1}
+.hero h1{font-family:'Sora',sans-serif;font-weight:900;font-size:clamp(28px,5vw,48px);letter-spacing:-.03em;margin:0 0 10px;
+  background:linear-gradient(135deg,#fff 30%,#FF8A94 70%,#E30613);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--dim);font-size:15px;max-width:520px;margin:0 auto 22px;line-height:1.5}
+.eyebrow{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);font-weight:700}
+
+/* category chips */
+.cat-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:0 26px 20px;position:relative;z-index:1}
+.cat-chip{padding:8px 16px;border-radius:99px;border:1px solid var(--line2);background:var(--panel);color:var(--dim);
+  font-size:12.5px;font-weight:600;transition:.2s;cursor:pointer}
+.cat-chip:hover,.cat-chip.active{background:rgba(227,6,19,.16);border-color:rgba(227,6,19,.45);color:#fff}
+
+/* grid */
+.catalogue{padding:0 26px 40px;position:relative;z-index:1}
+.car-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.car-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+  backdrop-filter:blur(var(--glass-blur)) saturate(130%);
+  box-shadow:0 18px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06);
+  transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease,border-color .35s ease;cursor:default}
+.car-card:hover{border-color:var(--line2);transform:translateY(-6px);box-shadow:0 28px 55px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.09)}
+.car-img{height:180px;background:linear-gradient(160deg,#0e1528,#1a2238);position:relative;overflow:hidden}
+.car-img img{width:100%;height:100%;object-fit:cover;display:block}
+.car-img .placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:42px;opacity:.25}
+.status-badge{position:absolute;top:12px;right:12px;padding:4px 11px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.04em;
+  backdrop-filter:blur(10px)}
+.status-available{background:rgba(47,213,124,.18);color:#6FE8A8;border:1px solid rgba(47,213,124,.4)}
+.status-booked{background:rgba(255,176,32,.16);color:#FFC95C;border:1px solid rgba(255,176,32,.45)}
+.status-sold{background:rgba(255,59,78,.16);color:#FF8A94;border:1px solid rgba(255,59,78,.4)}
+.car-body{padding:16px}
+.car-cat{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:4px}
+.car-name{font-family:'Sora',sans-serif;font-weight:800;font-size:17px;margin:0 0 6px;letter-spacing:-.01em}
+.car-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.car-price{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--cyan)}
+.car-year{font-size:12px;color:var(--dim)}
+.car-desc{font-size:12.5px;color:var(--dim);line-height:1.45;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.car-actions{display:flex;gap:8px}
+
+/* empty */
+.empty{padding:40px 20px;border:1px dashed var(--line2);border-radius:12px;color:var(--faint);font-size:13px;text-align:center}
+
+/* panel */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;
+  backdrop-filter:blur(var(--glass-blur)) saturate(130%);
+  box-shadow:0 18px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06)}
+.panel-title{font-family:'Sora',sans-serif;font-size:14.5px;font-weight:800;margin:0 0 12px;letter-spacing:.01em;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.panel-title .spacer{margin-left:auto}
+
+/* forms */
+input,select,textarea{width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--line2);
+  background:rgba(255,255,255,.03);color:var(--ink);font-size:13px;font-family:'Inter',sans-serif;
+  backdrop-filter:blur(6px);transition:border-color .2s ease,background .2s ease}
+input:focus,select:focus,textarea:focus{background:rgba(255,255,255,.06);border-color:rgba(62,210,232,.5)}
+select option{background:#101830;color:var(--ink)}
+textarea{min-height:80px;resize:vertical}
+label.f{display:block;margin-bottom:10px}
+label.f>span{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media(max-width:720px){.grid2{grid-template-columns:1fr}}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(3,6,12,.6);backdrop-filter:blur(8px);display:none;
+  align-items:center;justify-content:center;padding:18px;z-index:100}
+.overlay.open{display:flex;animation:overlayIn .25s ease}
+@keyframes overlayIn{from{opacity:0}to{opacity:1}}
+.modal{background:linear-gradient(170deg,rgba(24,33,58,.9),rgba(9,13,24,.94));border:1px solid var(--line2);border-radius:20px;padding:22px;
+  width:100%;max-width:560px;max-height:92vh;overflow-y:auto;
+  box-shadow:0 40px 90px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter:blur(24px) saturate(150%);
+  animation:modalIn .35s cubic-bezier(.16,.9,.3,1.1)}
+.modal.wide{max-width:820px}
+@keyframes modalIn{from{opacity:0;transform:translateY(18px) scale(.96)}to{opacity:1;transform:none}}
+.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.mhead h3{margin:0;font-family:'Sora',sans-serif;font-size:17px;font-weight:700}
+
+/* toast */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:#101830;
+  border:1px solid var(--line2);border-radius:12px;padding:11px 20px;font-size:13px;z-index:200;transition:.3s;
+  box-shadow:0 16px 40px rgba(0,0,0,.6);opacity:0}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* admin list */
+.admin-car-row{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;background:rgba(0,0,0,.2)}
+.admin-car-row img{width:72px;height:48px;object-fit:cover;border-radius:8px;background:#0e1528}
+.admin-car-row .grow{flex:1;min-width:0}
+.admin-car-row .nm{font-weight:700;font-size:13.5px}
+.admin-car-row .mt{font-size:11px;color:var(--faint);font-family:'JetBrains Mono',monospace}
+.mono{font-family:'JetBrains Mono',monospace}
+.muted{color:var(--dim)}
+.tag{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;border:1px solid var(--line2);background:var(--panel2);margin:2px 3px 2px 0}
+
+/* footer */
+.brand-footer{margin:40px 0 20px;text-align:center;position:relative;z-index:1}
+.bf-line{display:inline-flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;
+  font-size:11.5px;letter-spacing:.05em;color:rgba(255,255,255,.4);
+  padding:10px 22px;border-radius:99px;text-shadow:0 0 18px rgba(227,6,19,.25)}
+.bf-sep{color:rgba(255,255,255,.2)}
+.bf-warn{font-weight:700;color:rgba(255,138,148,.65);letter-spacing:.1em}
+
+/* detail modal image */
+.detail-img{width:100%;height:240px;object-fit:cover;border-radius:12px;margin-bottom:14px;background:#0e1528}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="logo">
+      <div class="logo-mark">JP</div>
+      <div>
+        <div class="logo-word">JPIX Drive</div>
+        <div class="logo-tag">Luxury Showroom</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="saved-pill"><span class="saved-dot" id="savedDot"></span><span id="savedTxt">Saved</span></div>
+      <button class="btn-ghost btn-sm" id="adminBtn" onclick="openAdminGate()">Admin</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero reveal">
+  <div class="eyebrow" style="margin-bottom:10px">Curated · Private · Exceptional</div>
+  <h1>The Collection</h1>
+  <p>Hand-selected luxury and performance machines. Browse by category, request a private viewing, and our team will reach out shortly.</p>
+</section>
+
+<div class="cat-bar reveal" id="catBar"></div>
+
+<section class="catalogue">
+  <div class="car-grid" id="carGrid"></div>
+</section>
+
+<footer class="brand-footer reveal">
+  <div class="bf-line">
+    <span>JPIX Drive Luxury Showroom</span>
+    <span class="bf-sep">·</span>
+    <span class="bf-warn">FOR ENQUIRIES ONLY</span>
+    <span class="bf-sep">·</span>
+    <span>Powered by MachineMind</span>
+  </div>
+</footer>
+
+<!-- Interest modal -->
+<div class="overlay" id="interestModal">
+  <div class="modal">
+    <div class="mhead"><h3>Show Interest</h3><button class="btn-ghost btn-sm" onclick="closeModal('interestModal')">✕</button></div>
+    <p class="muted" style="font-size:13px;margin:0 0 14px">We’ll open your email client with the details pre-filled to our team. After sending you’ll be taken to Instagram.</p>
+    <label class="f"><span>Your name *</span><input id="intName" placeholder="Full name"></label>
+    <label class="f"><span>Phone number *</span><input id="intPhone" placeholder="+91 / +61 …"></label>
+    <label class="f"><span>Choice of car</span><input id="intCar" readonly></label>
+    <label class="f"><span>Optional notes</span><textarea id="intNotes" placeholder="Preferred contact time, trade-in, finance, viewing location…"></textarea></label>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn-ghost" onclick="closeModal('interestModal')">Cancel</button>
+      <button class="btn" onclick="submitInterest()">Send interest</button>
+    </div>
+  </div>
+</div>
+
+<!-- Car detail modal -->
+<div class="overlay" id="detailModal">
+  <div class="modal">
+    <div class="mhead"><h3 id="detailTitle">Car</h3><button class="btn-ghost btn-sm" onclick="closeModal('detailModal')">✕</button></div>
+    <div id="detailBody"></div>
+  </div>
+</div>
+
+<!-- Admin password gate -->
+<div class="overlay" id="adminGate">
+  <div class="modal" style="max-width:380px">
+    <div class="mhead"><h3>Admin access</h3><button class="btn-ghost btn-sm" onclick="closeModal('adminGate')">✕</button></div>
+    <label class="f"><span>Password</span><input type="password" id="adminPass" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkAdminPass()"></label>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn-ghost" onclick="closeModal('adminGate')">Cancel</button>
+      <button class="btn" onclick="checkAdminPass()">Enter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin panel -->
+<div class="overlay" id="adminModal">
+  <div class="modal wide">
+    <div class="mhead">
+      <h3>Admin — Inventory</h3>
+      <div style="display:flex;gap:8px">
+        <button class="btn-cyan btn btn-sm" onclick="openCarForm()">+ Add car</button>
+        <button class="btn-ghost btn-sm" onclick="closeModal('adminModal')">✕</button>
+      </div>
+    </div>
+    <div id="adminList"></div>
+  </div>
+</div>
+
+<!-- Add / Edit car form -->
+<div class="overlay" id="carFormModal">
+  <div class="modal">
+    <div class="mhead"><h3 id="carFormTitle">Add car</h3><button class="btn-ghost btn-sm" onclick="closeModal('carFormModal')">✕</button></div>
+    <div class="grid2">
+      <label class="f"><span>Name *</span><input id="cfName" placeholder="e.g. Porsche 911 GT3 RS"></label>
+      <label class="f"><span>Category *</span>
+        <select id="cfCat">
+          <option>Sports</option><option>Hypercar</option><option>SUV</option>
+          <option>Luxury Sedan</option><option>Electric</option><option>Classic</option>
+        </select>
+      </label>
+      <label class="f"><span>Year</span><input id="cfYear" type="number" placeholder="2024"></label>
+      <label class="f"><span>Price (display)</span><input id="cfPrice" placeholder="e.g. ₹ 3.2 Cr / $420,000"></label>
+      <label class="f" style="grid-column:1/-1"><span>Short description</span><textarea id="cfDesc" placeholder="Key highlights…"></textarea></label>
+      <label class="f" style="grid-column:1/-1"><span>Image URL</span><input id="cfImgUrl" placeholder="https://… or leave blank and upload below"></label>
+      <label class="f" style="grid-column:1/-1"><span>Or upload image</span><input type="file" id="cfImgFile" accept="image/*" onchange="handleImgUpload(this)"></label>
+      <label class="f"><span>Status</span>
+        <select id="cfStatus"><option>Available</option><option>Booked</option><option>Sold</option></select>
+      </label>
+    </div>
+    <div id="cfPreview" style="margin:8px 0 12px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn-ghost" onclick="closeModal('carFormModal')">Cancel</button>
+      <button class="btn" onclick="saveCarForm()">Save car</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const STORE_KEY = "jpix-luxury-showroom-v1";
+const CATEGORIES = ["All","Sports","Hypercar","SUV","Luxury Sedan","Electric","Classic"];
+const INSTAGRAM_URL = "https://www.instagram.com/"; // update to your handle if desired
+
+let S = { cars: [] };
+let activeCat = "All";
+let editingCarId = null;
+let pendingImgData = null;
+let interestCarId = null;
+
+function uid(){ return Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
+function esc(s){ return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._tm); t._tm = setTimeout(()=>t.classList.remove("show"), 2600);
+}
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+function openModal(id){ document.getElementById(id).classList.add("open"); }
+
+function save(){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(S));
+    setSaved(true);
+  }catch(e){
+    setSaved(false, "Storage full / blocked");
+  }
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) S = Object.assign({cars:[]}, JSON.parse(raw));
+  }catch(e){}
+}
+function setSaved(ok, msg){
+  const d = document.getElementById("savedDot"), t = document.getElementById("savedTxt");
+  d.classList.toggle("dirty", !ok);
+  t.textContent = msg || (ok ? "Saved" : "Unsaved");
+}
+
+/* ---------- seed ---------- */
+function seedIfEmpty(){
+  if(S.cars.length) return;
+  S.cars = [
+    {id:uid(), name:"Porsche 911 GT3 RS", category:"Sports", year:2024, price:"₹ 3.85 Cr",
+      desc:"Track-focused 4.0-litre flat-six, 518 hp, carbon wings and PDK. Absolute driver involvement.",
+      image:"", status:"Available"},
+    {id:uid(), name:"Lamborghini Huracán STO", category:"Sports", year:2023, price:"₹ 4.99 Cr",
+      desc:"Super Trofeo Omologata. Naturally aspirated V10, race-derived aerodynamics, street-legal.",
+      image:"", status:"Available"},
+    {id:uid(), name:"Ferrari SF90 Stradale", category:"Hypercar", year:2024, price:"₹ 7.50 Cr",
+      desc:"Plug-in hybrid V8 + three electric motors. 986 hp combined. The new frontier of Ferrari performance.",
+      image:"", status:"Booked"},
+    {id:uid(), name:"McLaren 765LT Spider", category:"Hypercar", year:2022, price:"₹ 6.20 Cr",
+      desc:"Longtail philosophy. Extreme aero, titanium exhaust, 755 hp twin-turbo V8. Only 765 units.",
+      image:"", status:"Available"},
+    {id:uid(), name:"Rolls-Royce Cullinan Black Badge", category:"SUV", year:2023, price:"₹ 8.90 Cr",
+      desc:"The pinnacle of luxury SUVs. Black Badge treatment, starlight headliner, effortless presence.",
+      image:"", status:"Available"},
+    {id:uid(), name:"Bentley Bentayga EWB Azure", category:"SUV", year:2024, price:"₹ 6.10 Cr",
+      desc:"Extended wheelbase, rear-seat
