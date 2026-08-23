@@ -1,1026 +1,429 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Callback Helper</title>
-<style>
-  :root{
-    --bg:#0a0c10;
-    --bg-2:#0f1217;
-    --panel:rgba(255,255,255,0.045);
-    --panel-solid:#12151b;
-    --border:rgba(255,255,255,0.09);
-    --border-soft:rgba(255,255,255,0.05);
-    --text:#eef1f5;
-    --muted:#8b93a4;
-    --muted-2:#5c6373;
-    --red:#e2001a;
-    --red-dim:#7a2530;
-    --amber:#f0a83c;
-    --blue:#4d9de0;
-    --green:#33c07a;
-    --grey:#5c6373;
-    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
-  }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  html,body{height:100%;}
-  body{
-    font-family:var(--font);
-    background:
-      radial-gradient(circle at 15% 0%, rgba(226,0,26,0.10), transparent 45%),
-      radial-gradient(circle at 85% 100%, rgba(77,157,224,0.06), transparent 50%),
-      var(--bg);
-    color:var(--text);
-    min-height:100vh;
-    display:flex;
-    -webkit-font-smoothing:antialiased;
-  }
-  ::selection{ background:rgba(226,0,26,0.35); }
-  a{color:inherit; text-decoration:none;}
-  button{ font-family:inherit; cursor:pointer; }
-  input, select, textarea{ font-family:inherit; }
-
-  /* ---------- Sidebar ---------- */
-  #sidebar{
-    width:230px;
-    min-width:230px;
-    background:linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01));
-    border-right:1px solid var(--border);
-    display:flex;
-    flex-direction:column;
-    padding:22px 14px;
-    position:sticky;
-    top:0;
-    height:100vh;
-  }
-  .brand{
-    display:flex; align-items:center; gap:10px;
-    padding:4px 8px 22px 8px;
-  }
-  .brand-mark{
-    width:30px; height:30px; border-radius:8px;
-    background:linear-gradient(135deg, var(--red), #8c0011);
-    display:flex; align-items:center; justify-content:center;
-    font-weight:800; font-size:14px; letter-spacing:-0.5px;
-    box-shadow:0 4px 14px rgba(226,0,26,0.35);
-    flex-shrink:0;
-  }
-  .brand-text{ line-height:1.15; }
-  .brand-text b{ font-size:14.5px; font-weight:700; display:block; }
-  .brand-text span{ font-size:11px; color:var(--muted); }
-
-  nav{ display:flex; flex-direction:column; gap:3px; margin-top:6px; }
-  .nav-item{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:10px 12px; border-radius:9px;
-    color:var(--muted); font-size:13.5px; font-weight:500;
-    border:1px solid transparent;
-    transition:background .15s, color .15s;
-  }
-  .nav-item:hover{ background:var(--panel); color:var(--text); }
-  .nav-item.active{
-    background:rgba(226,0,26,0.12);
-    color:#fff;
-    border-color:rgba(226,0,26,0.25);
-  }
-  .nav-left{ display:flex; align-items:center; gap:9px; }
-  .nav-icon{ width:16px; text-align:center; opacity:.9; font-size:14px; }
-  .nav-badge{
-    background:var(--red); color:#fff; font-size:10.5px; font-weight:700;
-    padding:1px 6px; border-radius:20px; min-width:18px; text-align:center;
-  }
-  .nav-badge.zero{ background:rgba(255,255,255,0.08); color:var(--muted); }
-
-  .sidebar-spacer{ flex:1; }
-  .new-btn{
-    width:100%; padding:11px 12px; border-radius:10px; border:none;
-    background:linear-gradient(135deg, var(--red), #a3001a);
-    color:#fff; font-weight:700; font-size:13px; letter-spacing:.2px;
-    box-shadow:0 6px 18px rgba(226,0,26,0.28);
-    transition:transform .12s, box-shadow .12s;
-  }
-  .new-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 22px rgba(226,0,26,0.38); }
-  .sidebar-foot{ font-size:10.5px; color:var(--muted-2); text-align:center; margin-top:12px; }
-
-  /* ---------- Main ---------- */
-  #main{ flex:1; min-width:0; padding:26px 34px 60px; max-width:1180px; }
-  .view{ display:none; animation:fadein .25s ease; }
-  .view.active{ display:block; }
-  @keyframes fadein{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
-
-  .page-head{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:12px; }
-  .page-head h1{ font-size:21px; font-weight:700; letter-spacing:-.2px; }
-  .page-head p{ color:var(--muted); font-size:13px; margin-top:3px; }
-  .head-actions{ display:flex; gap:8px; }
-
-  .btn{
-    padding:9px 14px; border-radius:9px; border:1px solid var(--border);
-    background:var(--panel); color:var(--text); font-size:12.5px; font-weight:600;
-    display:inline-flex; align-items:center; gap:6px; transition:background .15s, border-color .15s;
-  }
-  .btn:hover{ background:rgba(255,255,255,0.08); }
-  .btn.primary{ background:linear-gradient(135deg, var(--red), #a3001a); border-color:transparent; color:#fff; }
-  .btn.primary:hover{ filter:brightness(1.08); }
-  .btn.ghost{ background:transparent; }
-  .btn.small{ padding:6px 10px; font-size:11.5px; }
-  .btn.danger{ border-color:rgba(226,0,26,.35); color:#ff6d7c; }
-  .btn:disabled{ opacity:.35; cursor:not-allowed; }
-
-  /* ---------- Stat cards ---------- */
-  .stats-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:26px; }
-  .stat-card{
-    background:var(--panel); border:1px solid var(--border); border-radius:14px;
-    padding:16px 16px 14px; backdrop-filter:blur(10px);
-  }
-  .stat-card .num{ font-size:26px; font-weight:800; letter-spacing:-1px; }
-  .stat-card .lbl{ font-size:11.5px; color:var(--muted); margin-top:3px; }
-  .stat-card.accent-red .num{ color:#ff5069; }
-  .stat-card.accent-amber .num{ color:var(--amber); }
-  .stat-card.accent-green .num{ color:var(--green); }
-  .stat-card.accent-blue .num{ color:var(--blue); }
-
-  .section-title{ font-size:13px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin:26px 0 12px; }
-
-  /* ---------- Panel / list ---------- */
-  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:14px; overflow:hidden; backdrop-filter:blur(10px); }
-  .empty-state{ padding:46px 20px; text-align:center; color:var(--muted); font-size:13px; }
-  .empty-state .big{ font-size:28px; margin-bottom:8px; opacity:.5; }
-
-  table{ width:100%; border-collapse:collapse; }
-  th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted-2); padding:12px 16px; border-bottom:1px solid var(--border); font-weight:600; }
-  td{ padding:13px 16px; border-bottom:1px solid var(--border-soft); font-size:13px; vertical-align:middle; }
-  tbody tr{ transition:background .12s; cursor:pointer; }
-  tbody tr:hover{ background:rgba(255,255,255,0.03); }
-  tbody tr:last-child td{ border-bottom:none; }
-  .cell-name{ font-weight:600; }
-  .cell-sub{ color:var(--muted); font-size:11.5px; margin-top:2px; }
-  .mono{ font-family:var(--mono); font-size:12px; color:var(--muted); }
-
-  .badge{
-    display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:20px;
-    font-size:11px; font-weight:700; letter-spacing:.2px; white-space:nowrap;
-  }
-  .dot{ width:6px; height:6px; border-radius:50%; }
-  .badge.b-amber{ background:rgba(240,168,60,0.14); color:var(--amber); } .badge.b-amber .dot{ background:var(--amber); }
-  .badge.b-blue{ background:rgba(77,157,224,0.14); color:var(--blue); } .badge.b-blue .dot{ background:var(--blue); }
-  .badge.b-red{ background:rgba(226,0,26,0.16); color:#ff5069; } .badge.b-red .dot{ background:#ff5069; }
-  .badge.b-grey{ background:rgba(255,255,255,0.07); color:var(--muted); } .badge.b-grey .dot{ background:var(--muted); }
-  .badge.b-green{ background:rgba(51,192,122,0.15); color:var(--green); } .badge.b-green .dot{ background:var(--green); }
-  .badge.overdue{ animation:pulse 1.8s infinite; }
-  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.55;} }
-
-  .search-row{ display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
-  .search-input{
-    flex:1; min-width:200px; padding:10px 14px; border-radius:10px;
-    background:var(--panel); border:1px solid var(--border); color:var(--text); font-size:13px;
-  }
-  .search-input:focus, select.filter-select:focus{ outline:none; border-color:rgba(226,0,26,0.4); }
-  select.filter-select{
-    padding:10px 12px; border-radius:10px; background:var(--panel-solid); border:1px solid var(--border); color:var(--text); font-size:12.5px;
-  }
-
-  /* ---------- Pending list rows ---------- */
-  .pending-row{
-    display:flex; align-items:center; justify-content:space-between; gap:14px;
-    padding:14px 16px; border-bottom:1px solid var(--border-soft); cursor:pointer;
-  }
-  .pending-row:hover{ background:rgba(255,255,255,0.03); }
-  .pending-row:last-child{ border-bottom:none; }
-  .pr-left{ display:flex; flex-direction:column; gap:3px; }
-  .pr-name{ font-weight:600; font-size:13.5px; }
-  .pr-sub{ font-size:11.5px; color:var(--muted); }
-  .pr-right{ display:flex; align-items:center; gap:10px; }
-  .pr-time{ font-size:12px; color:var(--muted); text-align:right; }
-  .pr-time b{ color:var(--text); display:block; font-size:13px; }
-
-  /* ---------- Detail view ---------- */
-  .back-link{ display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:12.5px; margin-bottom:16px; }
-  .back-link:hover{ color:var(--text); }
-
-  .profile-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:22px; flex-wrap:wrap; }
-  .profile-id{ display:flex; align-items:center; gap:14px; }
-  .avatar{
-    width:52px; height:52px; border-radius:14px; flex-shrink:0;
-    background:linear-gradient(135deg, rgba(226,0,26,0.35), rgba(140,0,17,0.5));
-    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:19px;
-    border:1px solid rgba(226,0,26,0.3);
-  }
-  .profile-id h2{ font-size:19px; font-weight:700; }
-  .profile-id .sub{ color:var(--muted); font-size:12.5px; margin-top:3px; }
-
-  .info-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:14px; overflow:hidden; margin-bottom:26px; }
-  .info-cell{ background:var(--panel-solid); padding:14px 16px; }
-  .info-cell .k{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted-2); margin-bottom:5px; }
-  .info-cell .v{ font-size:13.5px; font-weight:600; word-break:break-word; }
-  .info-cell .v.issue{ font-weight:500; font-size:12.8px; line-height:1.4; color:var(--text); }
-
-  .stage-track{ display:flex; flex-direction:column; gap:12px; }
-  .stage-card{
-    background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:18px 20px;
-    display:flex; gap:16px; align-items:flex-start; position:relative;
-  }
-  .stage-card.locked{ opacity:.45; }
-  .stage-card.done{ border-color:rgba(51,192,122,0.3); background:rgba(51,192,122,0.05); }
-  .stage-card.due{ border-color:rgba(226,0,26,0.35); box-shadow:0 0 0 1px rgba(226,0,26,0.15); }
-  .stage-num{
-    width:34px; height:34px; border-radius:10px; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;
-    background:rgba(255,255,255,0.06); border:1px solid var(--border);
-  }
-  .stage-card.done .stage-num{ background:rgba(51,192,122,0.18); color:var(--green); border-color:rgba(51,192,122,0.35); }
-  .stage-card.due .stage-num{ background:rgba(226,0,26,0.18); color:#ff5069; border-color:rgba(226,0,26,0.35); }
-  .stage-body{ flex:1; min-width:0; }
-  .stage-title-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-  .stage-title{ font-size:14.5px; font-weight:700; }
-  .stage-meta{ font-size:12px; color:var(--muted); margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-  .stage-meta .edit-time{ color:var(--blue); font-size:11px; cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
-  .stage-note{ font-size:12px; color:var(--muted); margin-top:8px; background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; border:1px solid var(--border-soft); }
-  .stage-actions{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  .deferred-note{ font-size:11px; color:var(--amber); margin-top:5px; }
-
-  .time-edit{ display:flex; gap:6px; align-items:center; margin-top:8px; }
-  .time-edit input{ padding:7px 9px; border-radius:7px; background:var(--panel-solid); border:1px solid var(--border); color:var(--text); font-size:12px; }
-
-  /* ---------- Modal ---------- */
-  .modal-overlay{
-    position:fixed; inset:0; background:rgba(4,5,7,0.72); backdrop-filter:blur(3px);
-    display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
-  }
-  .modal-overlay.open{ display:flex; }
-  .modal{
-    width:100%; max-width:460px; background:var(--panel-solid); border:1px solid var(--border);
-    border-radius:16px; padding:24px; box-shadow:0 30px 70px rgba(0,0,0,0.55); max-height:88vh; overflow-y:auto;
-  }
-  .modal h3{ font-size:16px; font-weight:700; margin-bottom:4px; }
-  .modal .modal-sub{ font-size:12px; color:var(--muted); margin-bottom:18px; }
-  .field{ margin-bottom:13px; }
-  .field label{ display:block; font-size:11.5px; font-weight:600; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.4px; }
-  .field input, .field select, .field textarea{
-    width:100%; padding:10px 12px; border-radius:9px; background:var(--bg-2); border:1px solid var(--border);
-    color:var(--text); font-size:13px;
-  }
-  .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:rgba(226,0,26,0.45); }
-  .field textarea{ resize:vertical; min-height:64px; }
-  .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:20px; }
-  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-
-  /* ---------- Toast ---------- */
-  #toast{
-    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
-    background:#171a20; border:1px solid var(--border); padding:12px 20px; border-radius:11px;
-    font-size:13px; font-weight:600; opacity:0; pointer-events:none; transition:all .25s; z-index:200;
-    box-shadow:0 15px 35px rgba(0,0,0,0.4);
-  }
-  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
-  #toast .dot{ display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); margin-right:8px; }
-
-  ::-webkit-scrollbar{ width:9px; }
-  ::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.12); border-radius:20px; }
-
-  @media(max-width:920px){
-    .stats-grid{ grid-template-columns:repeat(2,1fr); }
-    .info-grid{ grid-template-columns:repeat(2,1fr); }
-  }
-</style>
-</head>
-<body>
-
-<div id="sidebar">
-  <div class="brand">
-    <div class="brand-mark">CB</div>
-    <div class="brand-text"><b>Callback Helper</b><span>KYC follow-up tracker</span></div>
-  </div>
-  <nav>
-    <div class="nav-item" data-view="dashboard"><span class="nav-left"><span class="nav-icon">&#9673;</span>Dashboard</span></div>
-    <div class="nav-item" data-view="pending"><span class="nav-left"><span class="nav-icon">&#9200;</span>Pending Today</span><span class="nav-badge" id="badge-pending">0</span></div>
-    <div class="nav-item" data-view="customers"><span class="nav-left"><span class="nav-icon">&#9776;</span>Customers</span></div>
-    <div class="nav-item" data-view="history"><span class="nav-left"><span class="nav-icon">&#8635;</span>Call History</span></div>
-    <div class="nav-item" data-view="settings"><span class="nav-left"><span class="nav-icon">&#9881;</span>Settings</span></div>
-  </nav>
-  <div class="sidebar-spacer"></div>
-  <button class="new-btn" onclick="openNewCustomerModal()">+ New Customer</button>
-  <div class="sidebar-foot">Data stored locally in this browser</div>
-</div>
-
-<div id="main">
-
-  <!-- DASHBOARD -->
-  <div class="view" id="view-dashboard">
-    <div class="page-head">
-      <div><h1>Dashboard</h1><p>Overview of your callback pipeline</p></div>
-      <div class="head-actions"><button class="btn primary" onclick="openNewCustomerModal()">+ New Customer</button></div>
-    </div>
-    <div class="stats-grid" id="stats-grid"></div>
-    <div class="section-title">Next up</div>
-    <div class="panel" id="dash-pending-list"></div>
-  </div>
-
-  <!-- PENDING TODAY -->
-  <div class="view" id="view-pending">
-    <div class="page-head">
-      <div><h1>Pending Today</h1><p>Calls and withdrawal actions due now or overdue</p></div>
-    </div>
-    <div class="panel" id="pending-list"></div>
-  </div>
-
-  <!-- CUSTOMERS -->
-  <div class="view" id="view-customers">
-    <div class="page-head">
-      <div><h1>Customers</h1><p>All callback profiles</p></div>
-      <div class="head-actions"><button class="btn primary" onclick="openNewCustomerModal()">+ New Customer</button></div>
-    </div>
-    <div class="search-row">
-      <input class="search-input" id="cust-search" placeholder="Search by name, phone, or SSO number..." oninput="renderCustomers()">
-      <select class="filter-select" id="cust-filter" onchange="renderCustomers()">
-        <option value="all">All statuses</option>
-        <option value="1">Awaiting Call 1</option>
-        <option value="2">Awaiting Call 2</option>
-        <option value="3">Awaiting Call 3</option>
-        <option value="wait7">7-day wait</option>
-        <option value="readyWithdraw">Ready to withdraw</option>
-        <option value="withdrawn">Withdrawn</option>
-        <option value="closed">Closed early</option>
-      </select>
-    </div>
-    <div class="panel"><table><thead><tr>
-      <th>Customer</th><th>SSO Number</th><th>Issue</th><th>Status</th><th>Next action</th>
-    </tr></thead><tbody id="customers-tbody"></tbody></table>
-    <div class="empty-state" id="customers-empty" style="display:none;"><div class="big">&#9776;</div>No customers yet. Click "+ New Customer" to add your first profile.</div>
-    </div>
-  </div>
-
-  <!-- CALL HISTORY -->
-  <div class="view" id="view-history">
-    <div class="page-head"><div><h1>Call History</h1><p>Every call logged, across all customers</p></div></div>
-    <div class="panel" id="history-list"></div>
-  </div>
-
-  <!-- SETTINGS -->
-  <div class="view" id="view-settings">
-    <div class="page-head"><div><h1>Settings</h1><p>Shift hours and reminders</p></div></div>
-    <div class="panel" style="padding:22px 24px; max-width:460px;">
-      <div class="field">
-        <label>Shift start</label>
-        <input type="time" id="set-shift-start">
-      </div>
-      <div class="field">
-        <label>Shift end</label>
-        <input type="time" id="set-shift-end">
-      </div>
-      <p style="font-size:11.5px; color:var(--muted); margin:-4px 0 16px;">If a follow-up call lands 4 hours later outside this window, it's automatically pushed to the next time your shift starts.</p>
-      <button class="btn primary" onclick="saveSettings()">Save settings</button>
-      <div style="height:1px; background:var(--border); margin:20px 0;"></div>
-      <div class="field" style="margin-bottom:10px;">
-        <label>Desktop reminders</label>
-        <button class="btn small" id="notif-btn" onclick="requestNotifPermission()">Enable browser notifications</button>
-      </div>
-      <p style="font-size:11.5px; color:var(--muted);">Keep this tab open — it checks every minute and pings you when a call or the 7-day withdrawal window is due.</p>
-      <div style="height:1px; background:var(--border); margin:20px 0;"></div>
-      <button class="btn danger small" onclick="exportData()">Export data (.json backup)</button>
-    </div>
-  </div>
-
-  <!-- DETAIL -->
-  <div class="view" id="view-detail"></div>
-
-</div>
-
-<!-- New customer modal -->
-<div class="modal-overlay" id="modal-new">
-  <div class="modal">
-    <h3>New callback profile</h3>
-    <div class="modal-sub">Call 1 will be scheduled for right now.</div>
-    <div class="field"><label>Customer name</label><input type="text" id="f-name" placeholder="Full name"></div>
-    <div class="two-col">
-      <div class="field"><label>Phone number</label><input type="text" id="f-phone" placeholder="+61..."></div>
-      <div class="field"><label>Date of birth</label><input type="date" id="f-dob"></div>
-    </div>
-    <div class="field"><label>SSO number</label><input type="text" id="f-sso" placeholder="SSO / case number"></div>
-    <div class="field"><label>Issue</label><textarea id="f-issue" placeholder="Reason for callback"></textarea></div>
-    <div class="modal-actions">
-      <button class="btn ghost" onclick="closeModal('modal-new')">Cancel</button>
-      <button class="btn primary" onclick="createCustomer()">Create profile</button>
-    </div>
-  </div>
-</div>
-
-<!-- Log call modal -->
-<div class="modal-overlay" id="modal-call">
-  <div class="modal">
-    <h3 id="call-modal-title">Log call</h3>
-    <div class="modal-sub" id="call-modal-sub"></div>
-    <div class="field">
-      <label>Outcome</label>
-      <select id="f-outcome">
-        <option>Reached — issue resolved</option>
-        <option>Reached — follow-up still needed</option>
-        <option>No answer</option>
-        <option>Voicemail left</option>
-        <option>Wrong number</option>
-        <option>Customer requested different time</option>
-      </select>
-    </div>
-    <div class="field"><label>Notes (optional)</label><textarea id="f-call-note" placeholder="What was discussed..."></textarea></div>
-    <div class="modal-actions">
-      <button class="btn ghost" onclick="closeModal('modal-call')">Cancel</button>
-      <button class="btn primary" onclick="submitCallLog()">Save & continue</button>
-    </div>
-  </div>
-</div>
-
-<!-- Close early modal -->
-<div class="modal-overlay" id="modal-close">
-  <div class="modal">
-    <h3>Close case early</h3>
-    <div class="modal-sub">This ends the callback sequence before all steps are complete.</div>
-    <div class="field"><label>Reason</label><textarea id="f-close-reason" placeholder="e.g. issue resolved on first contact"></textarea></div>
-    <div class="modal-actions">
-      <button class="btn ghost" onclick="closeModal('modal-close')">Cancel</button>
-      <button class="btn danger" onclick="submitCloseEarly()">Close case</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-
-<script>
-/* ================= STATE ================= */
-const STORE_KEY = 'callbackHelperData_v1';
-let store = loadStore();
-let currentView = 'dashboard';
-let currentDetailId = null;
-let pendingCallStage = null; // {customerId, stage}
-let pendingCloseId = null;
-let notifiedKeys = new Set();
-
-function loadStore(){
-  try{
-    const raw = localStorage.getItem(STORE_KEY);
-    if(raw) return JSON.parse(raw);
-  }catch(e){}
-  return {
-    settings:{ shiftStartHour:19, shiftStartMin:0, shiftEndHour:4, shiftEndMin:0 },
-    customers:[]
-  };
-}
-function saveStore(){ localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
-
-/* ================= TIME / SCHEDULING LOGIC ================= */
-function isWithinShift(date, s){
-  const mins = date.getHours()*60 + date.getMinutes();
-  const start = s.shiftStartHour*60 + s.shiftStartMin;
-  const end = s.shiftEndHour*60 + s.shiftEndMin;
-  if(start === end) return true;
-  if(start < end) return mins >= start && mins < end;
-  return mins >= start || mins < end;
-}
-function nextShiftStart(fromDate, s){
-  const d = new Date(fromDate);
-  d.setHours(s.shiftStartHour, s.shiftStartMin, 0, 0);
-  if(d <= fromDate) d.setDate(d.getDate()+1);
-  return d;
-}
-function computeNextCallTime(fromDate){
-  const s = store.settings;
-  const candidate = new Date(fromDate.getTime() + 4*60*60*1000);
-  if(isWithinShift(candidate, s)) return { time: candidate, deferred:false };
-  return { time: nextShiftStart(candidate, s), deferred:true };
-}
-function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
-
-/* ================= HELPERS ================= */
-function uid(){ return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
-function fmtDateTime(iso){
-  if(!iso) return '—';
-  const d = new Date(iso);
-  const today = new Date();
-  const sameDay = d.toDateString() === today.toDateString();
-  const tmr = new Date(today); tmr.setDate(tmr.getDate()+1);
-  const isTomorrow = d.toDateString() === tmr.toDateString();
-  const time = d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
-  if(sameDay) return 'Today, ' + time;
-  if(isTomorrow) return 'Tomorrow, ' + time;
-  return d.toLocaleDateString([], {month:'short', day:'numeric'}) + ', ' + time;
-}
-function fmtDate(iso){
-  if(!iso) return '—';
-  return new Date(iso).toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
-}
-function toInputLocal(iso){
-  const d = new Date(iso);
-  const pad = n => String(n).padStart(2,'0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-function initials(name){
-  return (name||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
-}
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.innerHTML = '<span class="dot"></span>' + msg;
-  t.classList.add('show');
-  clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
-}
-function openModal(id){ document.getElementById(id).classList.add('open'); }
-function closeModal(id){ document.getElementById(id).classList.remove('open'); }
-
-/* ================= DERIVED CUSTOMER STATE ================= */
-// Returns { label, colorClass, nextAt, nextType, overdue }
-function getCustomerStatusInfo(c){
-  if(c.status === 'withdrawn') return { label:'Withdrawn', cls:'b-grey', nextAt:null, nextType:null, overdue:false };
-  if(c.status === 'closed') return { label:'Closed early', cls:'b-grey', nextAt:null, nextType:null, overdue:false };
-
-  const call1 = c.calls[0], call2 = c.calls[1], call3 = c.calls[2];
-  const now = new Date();
-
-  if(!call1.completedAt){
-    return { label:'Awaiting Call 1', cls:'b-amber', nextAt:call1.scheduledAt, nextType:'call', stage:1, overdue: new Date(call1.scheduledAt) < now };
-  }
-  if(!call2 || !call2.completedAt){
-    const overdue = new Date(call2.scheduledAt) < now;
-    return { label:'Awaiting Call 2', cls: overdue ? 'b-red' : 'b-blue', nextAt:call2.scheduledAt, nextType:'call', stage:2, overdue };
-  }
-  if(!call3 || !call3.completedAt){
-    const overdue = new Date(call3.scheduledAt) < now;
-    return { label:'Awaiting Call 3', cls: overdue ? 'b-red' : 'b-blue', nextAt:call3.scheduledAt, nextType:'call', stage:3, overdue };
-  }
-  // all 3 calls done
-  if(c.withdrawEligibleAt && new Date(c.withdrawEligibleAt) > now){
-    return { label:'7-day wait', cls:'b-grey', nextAt:c.withdrawEligibleAt, nextType:'withdraw', overdue:false };
-  }
-  return { label:'Ready to withdraw', cls:'b-green', nextAt:c.withdrawEligibleAt, nextType:'withdraw', overdue:true };
-}
-
-function getAllPending(){
-  const now = new Date();
-  return store.customers
-    .filter(c => c.status === 'active')
-    .map(c => ({ c, info: getCustomerStatusInfo(c) }))
-    .filter(x => x.info.nextAt && new Date(x.info.nextAt) <= endOfToday())
-    .sort((a,b) => new Date(a.info.nextAt) - new Date(b.info.nextAt));
-}
-function endOfToday(){ const d = new Date(); d.setHours(23,59,59,999); return d; }
-
-/* ================= NAV / VIEW SWITCH ================= */
-document.querySelectorAll('.nav-item').forEach(el=>{
-  el.addEventListener('click', ()=> switchView(el.dataset.view));
-});
-function switchView(view){
-  currentView = view;
-  document.querySelectorAll('.nav-item').forEach(el=> el.classList.toggle('active', el.dataset.view===view));
-  document.querySelectorAll('.view').forEach(el=> el.classList.remove('active'));
-  document.getElementById('view-'+view).classList.add('active');
-  renderAll();
-}
-
-/* ================= CUSTOMER CRUD ================= */
-function openNewCustomerModal(){
-  ['f-name','f-phone','f-dob','f-sso','f-issue'].forEach(id=> document.getElementById(id).value='');
-  openModal('modal-new');
-}
-function createCustomer(){
-  const name = document.getElementById('f-name').value.trim();
-  const phone = document.getElementById('f-phone').value.trim();
-  const dob = document.getElementById('f-dob').value;
-  const sso = document.getElementById('f-sso').value.trim();
-  const issue = document.getElementById('f-issue').value.trim();
-  if(!name || !phone){ showToast('Name and phone are required'); return; }
-
-  const now = new Date();
-  const customer = {
-    id: uid(),
-    name, phone, dob, sso, issue,
-    createdAt: now.toISOString(),
-    status: 'active',
-    withdrawEligibleAt: null,
-    calls: [
-      { stage:1, scheduledAt: now.toISOString(), completedAt:null, outcome:null, note:null, deferred:false }
-    ]
-  };
-  store.customers.unshift(customer);
-  saveStore();
-  closeModal('modal-new');
-  showToast('Profile created for ' + name);
-  openDetail(customer.id);
-}
-
-function deleteCustomer(id){
-  if(!confirm('Delete this profile permanently? This cannot be undone.')) return;
-  store.customers = store.customers.filter(c=>c.id!==id);
-  saveStore();
-  switchView('customers');
-}
-
-/* ================= CALL LOGGING FLOW ================= */
-function openCallModal(customerId, stage){
-  pendingCallStage = { customerId, stage };
-  const c = store.customers.find(x=>x.id===customerId);
-  document.getElementById('call-modal-title').textContent = 'Log Call ' + stage;
-  document.getElementById('call-modal-sub').textContent = c.name + ' — ' + c.phone;
-  document.getElementById('f-outcome').selectedIndex = 0;
-  document.getElementById('f-call-note').value = '';
-  openModal('modal-call');
-}
-
-function submitCallLog(){
-  const { customerId, stage } = pendingCallStage;
-  const c = store.customers.find(x=>x.id===customerId);
-  const outcome = document.getElementById('f-outcome').value;
-  const note = document.getElementById('f-call-note').value.trim();
-  const now = new Date();
-
-  const call = c.calls[stage-1];
-  call.completedAt = now.toISOString();
-  call.outcome = outcome;
-  call.note = note;
-
-  if(stage === 1 || stage === 2){
-    const next = computeNextCallTime(now);
-    c.calls[stage] = {
-      stage: stage+1,
-      scheduledAt: next.time.toISOString(),
-      completedAt: null, outcome:null, note:null,
-      deferred: next.deferred
-    };
-    showToast('Call ' + stage + ' logged. Call ' + (stage+1) + ' scheduled for ' + fmtDateTime(next.time.toISOString()) + (next.deferred ? ' (shift-deferred)' : ''));
-  } else if(stage === 3){
-    c.withdrawEligibleAt = addDays(now, 7).toISOString();
-    showToast('Call 3 logged. Case enters 7-day wait — eligible to withdraw ' + fmtDate(c.withdrawEligibleAt));
-  }
-
-  saveStore();
-  closeModal('modal-call');
-  renderAll();
-  if(currentView==='detail') renderDetail(customerId);
-}
-
-function editScheduledTime(customerId, stage){
-  const c = store.customers.find(x=>x.id===customerId);
-  const call = c.calls[stage-1];
-  const wrap = document.getElementById('time-edit-'+stage);
-  wrap.innerHTML = `<input type="datetime-local" id="time-input-${stage}" value="${toInputLocal(call.scheduledAt)}">
-    <button class="btn small primary" onclick="saveEditedTime('${customerId}',${stage})">Save</button>
-    <button class="btn small ghost" onclick="renderDetail('${customerId}')">Cancel</button>`;
-}
-function saveEditedTime(customerId, stage){
-  const c = store.customers.find(x=>x.id===customerId);
-  const val = document.getElementById('time-input-'+stage).value;
-  if(!val) return;
-  c.calls[stage-1].scheduledAt = new Date(val).toISOString();
-  c.calls[stage-1].deferred = false;
-  saveStore();
-  showToast('Call ' + stage + ' time updated');
-  renderDetail(customerId);
-}
-
-function editWithdrawTime(customerId){
-  const c = store.customers.find(x=>x.id===customerId);
-  const wrap = document.getElementById('withdraw-time-edit');
-  wrap.innerHTML = `<input type="datetime-local" id="withdraw-time-input" value="${toInputLocal(c.withdrawEligibleAt)}">
-    <button class="btn small primary" onclick="saveWithdrawTime('${customerId}')">Save</button>
-    <button class="btn small ghost" onclick="renderDetail('${customerId}')">Cancel</button>`;
-}
-function saveWithdrawTime(customerId){
-  const c = store.customers.find(x=>x.id===customerId);
-  const val = document.getElementById('withdraw-time-input').value;
-  if(!val) return;
-  c.withdrawEligibleAt = new Date(val).toISOString();
-  saveStore();
-  renderDetail(customerId);
-}
-
-function markWithdrawn(customerId){
-  if(!confirm('Confirm this case has been withdrawn?')) return;
-  const c = store.customers.find(x=>x.id===customerId);
-  c.status = 'withdrawn';
-  saveStore();
-  showToast('Case marked as withdrawn');
-  renderDetail(customerId);
-}
-
-function openCloseEarlyModal(customerId){
-  pendingCloseId = customerId;
-  document.getElementById('f-close-reason').value = '';
-  openModal('modal-close');
-}
-function submitCloseEarly(){
-  const c = store.customers.find(x=>x.id===pendingCloseId);
-  c.status = 'closed';
-  c.closeReason = document.getElementById('f-close-reason').value.trim();
-  c.closedAt = new Date().toISOString();
-  saveStore();
-  closeModal('modal-close');
-  showToast('Case closed');
-  renderDetail(pendingCloseId);
-}
-
-/* ================= RENDER: DASHBOARD ================= */
-function renderDashboard(){
-  const active = store.customers.filter(c=>c.status==='active');
-  const pending = getAllPending();
-  const overdue = pending.filter(x=>x.info.overdue).length;
-  const readyWithdraw = active.filter(c => getCustomerStatusInfo(c).label==='Ready to withdraw').length;
-  const today = new Date().toDateString();
-  const doneToday = store.customers.flatMap(c=>c.calls).filter(call => call.completedAt && new Date(call.completedAt).toDateString()===today).length;
-
-  document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card"><div class="num">${store.customers.length}</div><div class="lbl">Total customers</div></div>
-    <div class="stat-card accent-amber"><div class="num">${pending.length}</div><div class="lbl">Pending today</div></div>
-    <div class="stat-card accent-red"><div class="num">${overdue}</div><div class="lbl">Overdue</div></div>
-    <div class="stat-card accent-blue"><div class="num">${doneToday}</div><div class="lbl">Calls done today</div></div>
-    <div class="stat-card accent-green"><div class="num">${readyWithdraw}</div><div class="lbl">Ready to withdraw</div></div>
-  `;
-
-  const list = pending.slice(0,8);
-  document.getElementById('dash-pending-list').innerHTML = renderPendingRows(list, true);
-}
-
-function renderPendingRows(list, limited){
-  if(list.length===0) return `<div class="empty-state"><div class="big">&#10003;</div>Nothing due right now. Nice.</div>`;
-  return list.map(({c, info}) => `
-    <div class="pending-row" onclick="openDetail('${c.id}')">
-      <div class="pr-left">
-        <div class="pr-name">${escapeHtml(c.name)}</div>
-        <div class="pr-sub">${escapeHtml(c.phone)} &middot; SSO ${escapeHtml(c.sso||'—')}</div>
-      </div>
-      <div class="pr-right">
-        <div class="pr-time"><b>${fmtDateTime(info.nextAt)}</b>${info.nextType==='withdraw' ? 'Withdrawal check' : ('Call ' + info.stage)}</div>
-        <span class="badge ${info.cls} ${info.overdue ? 'overdue':''}"><span class="dot"></span>${info.overdue ? 'Overdue' : 'Due'}</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-/* ================= RENDER: PENDING TODAY ================= */
-function renderPending(){
-  const list = getAllPending();
-  document.getElementById('pending-list').innerHTML = renderPendingRows(list);
-}
-
-/* ================= RENDER: CUSTOMERS ================= */
-function renderCustomers(){
-  const q = (document.getElementById('cust-search').value || '').toLowerCase();
-  const filter = document.getElementById('cust-filter').value;
-  let list = store.customers.filter(c=>{
-    const matchesQ = !q || c.name.toLowerCase().includes(q) || (c.phone||'').includes(q) || (c.sso||'').toLowerCase().includes(q);
-    if(!matchesQ) return false;
-    if(filter==='all') return true;
-    const info = getCustomerStatusInfo(c);
-    if(filter==='withdrawn') return c.status==='withdrawn';
-    if(filter==='closed') return c.status==='closed';
-    if(filter==='wait7') return info.label==='7-day wait';
-    if(filter==='readyWithdraw') return info.label==='Ready to withdraw';
-    if(filter==='1') return info.label==='Awaiting Call 1';
-    if(filter==='2') return info.label==='Awaiting Call 2';
-    if(filter==='3') return info.label==='Awaiting Call 3';
-    return true;
-  });
-
-  const tbody = document.getElementById('customers-tbody');
-  document.getElementById('customers-empty').style.display = list.length ? 'none' : 'block';
-  tbody.innerHTML = list.map(c=>{
-    const info = getCustomerStatusInfo(c);
-    return `<tr onclick="openDetail('${c.id}')">
-      <td><div class="cell-name">${escapeHtml(c.name)}</div><div class="cell-sub">${escapeHtml(c.phone)}</div></td>
-      <td class="mono">${escapeHtml(c.sso||'—')}</td>
-      <td style="max-width:260px; color:var(--muted); font-size:12.5px;">${escapeHtml(truncate(c.issue,60))}</td>
-      <td><span class="badge ${info.cls} ${info.overdue?'overdue':''}"><span class="dot"></span>${info.label}</span></td>
-      <td style="color:var(--muted); font-size:12px;">${info.nextAt ? fmtDateTime(info.nextAt) : '—'}</td>
-    </tr>`;
-  }).join('');
-}
-
-/* ================= RENDER: HISTORY ================= */
-function renderHistory(){
-  const rows = [];
-  store.customers.forEach(c=>{
-    c.calls.forEach(call=>{
-      if(call.completedAt) rows.push({ c, call });
-    });
-  });
-  rows.sort((a,b)=> new Date(b.call.completedAt) - new Date(a.call.completedAt));
-
-  if(rows.length===0){
-    document.getElementById('history-list').innerHTML = `<div class="empty-state"><div class="big">&#8635;</div>No calls logged yet.</div>`;
-    return;
-  }
-  document.getElementById('history-list').innerHTML = `<table><thead><tr>
-    <th>When</th><th>Customer</th><th>Call</th><th>Outcome</th><th>Notes</th>
-  </tr></thead><tbody>` + rows.map(({c,call})=>`
-    <tr onclick="openDetail('${c.id}')">
-      <td style="white-space:nowrap; color:var(--muted); font-size:12px;">${fmtDateTime(call.completedAt)}</td>
-      <td class="cell-name">${escapeHtml(c.name)}</td>
-      <td><span class="badge b-grey"><span class="dot"></span>Call ${call.stage}</span></td>
-      <td>${escapeHtml(call.outcome||'—')}</td>
-      <td style="color:var(--muted); font-size:12.5px; max-width:260px;">${escapeHtml(truncate(call.note||'',70))}</td>
-    </tr>`).join('') + `</tbody></table>`;
-}
-
-/* ================= RENDER: DETAIL ================= */
-function openDetail(id){
-  currentDetailId = id;
-  switchViewRaw('detail');
-  renderDetail(id);
-}
-function switchViewRaw(view){
-  currentView = view;
-  document.querySelectorAll('.nav-item').forEach(el=> el.classList.remove('active'));
-  document.querySelectorAll('.view').forEach(el=> el.classList.remove('active'));
-  document.getElementById('view-'+view).classList.add('active');
-}
-
-function stageCardHtml(c, stageNum){
-  const call = c.calls[stageNum-1];
-  const prevDone = stageNum===1 ? true : (c.calls[stageNum-2] && c.calls[stageNum-2].completedAt);
-  if(!call){
-    return `<div class="stage-card locked">
-      <div class="stage-num">${stageNum}</div>
-      <div class="stage-body"><div class="stage-title">Call ${stageNum}</div><div class="stage-meta">Unlocks once Call ${stageNum-1} is logged</div></div>
-    </div>`;
-  }
-  const isDone = !!call.completedAt;
-  const isOverdue = !isDone && new Date(call.scheduledAt) < new Date();
-  const cls = isDone ? 'done' : (isOverdue ? 'due' : '');
-  return `<div class="stage-card ${cls}">
-    <div class="stage-num">${isDone ? '&#10003;' : stageNum}</div>
-    <div class="stage-body">
-      <div class="stage-title-row">
-        <div class="stage-title">Call ${stageNum}</div>
-        ${isDone ? `<span class="badge b-green"><span class="dot"></span>Completed</span>` : (isOverdue ? `<span class="badge b-red overdue"><span class="dot"></span>Overdue</span>` : `<span class="badge b-blue"><span class="dot"></span>Scheduled</span>`)}
-      </div>
-      <div class="stage-meta">
-        ${isDone ? 'Completed ' + fmtDateTime(call.completedAt) : 'Scheduled for ' + fmtDateTime(call.scheduledAt)}
-        ${!isDone ? `<span class="edit-time" onclick="editScheduledTime('${c.id}',${stageNum})">edit time</span>` : ''}
-      </div>
-      ${call.deferred && !isDone ? `<div class="deferred-note">Pushed to next shift start — the 4-hour mark fell outside working hours.</div>` : ''}
-      <div id="time-edit-${stageNum}" class="time-edit"></div>
-      ${isDone && call.outcome ? `<div class="stage-note"><b>${escapeHtml(call.outcome)}</b>${call.note ? ' — ' + escapeHtml(call.note) : ''}</div>` : ''}
-      ${!isDone ? `<div class="stage-actions"><button class="btn primary small" onclick="openCallModal('${c.id}',${stageNum})">Mark Call ${stageNum} Done</button></div>` : ''}
-    </div>
-  </div>`;
-}
-
-function withdrawStageHtml(c){
-  const call3 = c.calls[2];
-  if(!call3 || !call3.completedAt){
-    return `<div class="stage-card locked">
-      <div class="stage-num">7</div>
-      <div class="stage-body"><div class="stage-title">7-day wait &amp; withdrawal</div><div class="stage-meta">Unlocks once Call 3 is logged</div></div>
-    </div>`;
-  }
-  if(c.status==='withdrawn'){
-    return `<div class="stage-card done">
-      <div class="stage-num">&#10003;</div>
-      <div class="stage-body"><div class="stage-title">Case withdrawn</div><div class="stage-meta">Marked withdrawn</div></div>
-    </div>`;
-  }
-  const eligible = new Date(c.withdrawEligibleAt) <= new Date();
-  return `<div class="stage-card ${eligible ? 'due' : ''}">
-    <div class="stage-num">${eligible ? '&#9888;' : '7'}</div>
-    <div class="stage-body">
-      <div class="stage-title-row">
-        <div class="stage-title">7-day wait &amp; withdrawal</div>
-        ${eligible ? `<span class="badge b-green overdue"><span class="dot"></span>Ready</span>` : `<span class="badge b-grey"><span class="dot"></span>Waiting</span>`}
-      </div>
-      <div class="stage-meta">
-        ${eligible ? 'Eligible since ' : 'Eligible on '} ${fmtDate(c.withdrawEligibleAt)}
-        <span class="edit-time" onclick="editWithdrawTime('${c.id}')">edit date</span>
-      </div>
-      <div id="withdraw-time-edit" class="time-edit"></div>
-      <div class="stage-actions">
-        <button class="btn primary small" ${eligible ? '' : 'disabled'} onclick="markWithdrawn('${c.id}')">Withdraw case</button>
-      </div>
-    </div>
-  </div>`;
-}
-
-function renderDetail(id){
-  const c = store.customers.find(x=>x.id===id);
-  if(!c){ switchView('customers'); return; }
-  const info = getCustomerStatusInfo(c);
-
-  document.getElementById('view-detail').innerHTML = `
-    <div class="back-link" onclick="switchView('customers')">&larr; Back to customers</div>
-    <div class="profile-head">
-      <div class="profile-id">
-        <div class="avatar">${initials(c.name)}</div>
-        <div>
-          <h2>${escapeHtml(c.name)}</h2>
-          <div class="sub">Profile created ${fmtDate(c.createdAt)} &middot; <span class="badge ${info.cls} ${info.overdue?'overdue':''}"><span class="dot"></span>${info.label}</span></div>
-        </div>
-      </div>
-      <div class="head-actions">
-        ${c.status==='active' ? `<button class="btn danger small" onclick="openCloseEarlyModal('${c.id}')">Close case early</button>` : ''}
-        <button class="btn small" onclick="deleteCustomer('${c.id}')">Delete</button>
-      </div>
-    </div>
-
-    <div class="info-grid">
-      <div class="info-cell"><div class="k">Phone</div><div class="v">${escapeHtml(c.phone)}</div></div>
-      <div class="info-cell"><div class="k">Date of birth</div><div class="v">${c.dob ? fmtDate(c.dob) : '—'}</div></div>
-      <div class="info-cell"><div class="k">SSO Number</div><div class="v mono">${escapeHtml(c.sso||'—')}</div></div>
-      <div class="info-cell"><div class="k">Status</div><div class="v">${info.label}</div></div>
-    </div>
-    <div class="info-grid" style="grid-template-columns:1fr;">
-      <div class="info-cell"><div class="k">Issue</div><div class="v issue">${escapeHtml(c.issue||'—')}</div></div>
-    </div>
-
-    ${c.status==='closed' ? `<div class="panel" style="padding:16px 20px; margin-bottom:18px; border-color:rgba(226,0,26,.3);"><b>Closed early</b> &mdash; ${escapeHtml(c.closeReason||'no reason given')} <span style="color:var(--muted); font-size:12px;">(${fmtDateTime(c.closedAt)})</span></div>` : ''}
-
-    <div class="section-title">Callback sequence</div>
-    <div class="stage-track">
-      ${stageCardHtml(c,1)}
-      ${stageCardHtml(c,2)}
-      ${stageCardHtml(c,3)}
-      ${withdrawStageHtml(c)}
-    </div>
-  `;
-}
-
-/* ================= SETTINGS ================= */
-function renderSettings(){
-  const s = store.settings;
-  document.getElementById('set-shift-start').value = `${String(s.shiftStartHour).padStart(2,'0')}:${String(s.shiftStartMin).padStart(2,'0')}`;
-  document.getElementById('set-shift-end').value = `${String(s.shiftEndHour).padStart(2,'0')}:${String(s.shiftEndMin).padStart(2,'0')}`;
-  updateNotifBtn();
-}
-function saveSettings(){
-  const [sh, sm] = document.getElementById('set-shift-start').value.split(':').map(Number);
-  const [eh, em] = document.getElementById('set-shift-end').value.split(':').map(Number);
-  store.settings = { shiftStartHour:sh, shiftStartMin:sm, shiftEndHour:eh, shiftEndMin:em };
-  saveStore();
-  showToast('Shift hours updated');
-}
-function requestNotifPermission(){
-  if(!('Notification' in window)){ showToast('Notifications not supported in this browser'); return; }
-  Notification.requestPermission().then(()=> updateNotifBtn());
-}
-function updateNotifBtn(){
-  const btn = document.getElementById('notif-btn');
-  if(!('Notification' in window)){ btn.textContent = 'Not supported'; btn.disabled = true; return; }
-  if(Notification.permission === 'granted'){ btn.textContent = 'Notifications enabled ✓'; }
-  else { btn.textContent = 'Enable browser notifications'; }
-}
-function exportData(){
-  const blob = new Blob([JSON.stringify(store, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'callback-helper-backup-' + new Date().toISOString().slice(0,10) + '.json';
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* ================= UTIL ================= */
-function escapeHtml(str){
-  return String(str==null?'':str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-function truncate(str, n){ str = str||''; return str.length>n ? str.slice(0,n)+'…' : str; }
-
-/* ================= GLOBAL RENDER + REMINDER LOOP ================= */
-function renderAll(){
-  const pendingCount = getAllPending().length;
-  const badge = document.getElementById('badge-pending');
-  badge.textContent = pendingCount;
-  badge.classList.toggle('zero', pendingCount===0);
-
-  if(currentView==='dashboard') renderDashboard();
-  if(currentView==='pending') renderPending();
-  if(currentView==='customers') renderCustomers();
-  if(currentView==='history') renderHistory();
-  if(currentView==='settings') renderSettings();
-  if(currentView==='detail' && currentDetailId) renderDetail(currentDetailId);
-}
-
-function checkReminders(){
-  if(!('Notification' in window) || Notification.permission !== 'granted') return;
-  const now = new Date();
-  store.customers.filter(c=>c.status==='active').forEach(c=>{
-    const info = getCustomerStatusInfo(c);
-    if(!info.nextAt) return;
-    if(new Date(info.nextAt) <= now){
-      const key = c.id + '_' + info.label + '_' + info.nextAt;
-      if(!notifiedKeys.has(key)){
-        notifiedKeys.add(key);
-        const body = info.nextType==='withdraw'
-          ? c.name + ' is eligible for withdrawal.'
-          : c.name + ' — Call ' + info.stage + ' is due (' + c.phone + ').';
-        new Notification('Callback Helper', { body });
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmIndia – Random Video Chat for India</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            slate: { 950: '#0a0a0f' },
+            cyan: { 400: '#67f6ff' },
+            violet: { 500: '#8b5cf6' }
+          },
+          boxShadow: {
+            'glow-cyan': '0 0 40px -10px rgba(103, 246, 255, 0.4)',
+          }
+        }
       }
     }
-  });
-}
+  </script>
+  <style>
+    body {
+      background-color: #0a0a0f;
+      background-image: 
+        linear-gradient(rgba(103, 246, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(103, 246, 255, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .gradient-text {
+      background: linear-gradient(135deg, #67f6ff 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    video {
+      object-fit: cover;
+      background: #0a0a0f;
+    }
+  </style>
+</head>
+<body class="text-slate-200 antialiased min-h-screen">
 
-/* click outside modal closes it */
-document.querySelectorAll('.modal-overlay').forEach(ov=>{
-  ov.addEventListener('click', e=>{ if(e.target===ov) ov.classList.remove('open'); });
-});
+  <!-- AGE GATE -->
+  <div id="ageGate" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md">
+    <div class="glass rounded-3xl p-10 max-w-md mx-4 text-center shadow-glow-cyan">
+      <div class="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-cyan-400/20 to-violet-500/20 flex items-center justify-center">
+        <svg class="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-semibold tracking-tight mb-3">Are you 18 or older?</h2>
+      <p class="text-slate-400 text-sm mb-8">OmIndia is for adults only. You must be 18+ to continue.</p>
+      <div class="flex gap-4">
+        <button onclick="confirmAge(false)" class="flex-1 py-3.5 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5 transition">Under 18</button>
+        <button onclick="confirmAge(true)" class="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 to-violet-500 text-slate-950 font-semibold hover:opacity-90 transition shadow-glow-cyan">I’m 18+</button>
+      </div>
+    </div>
+  </div>
 
-/* ================= INIT ================= */
-switchView('dashboard');
-renderAll();
-setInterval(()=>{ renderAll(); checkReminders(); }, 60000);
-</script>
+  <!-- MAIN LANDING -->
+  <div id="mainApp" class="hidden">
+    <nav class="fixed top-0 left-0 right-0 z-40 glass border-b border-white/5">
+      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center">
+            <span class="text-slate-950 font-bold text-sm">O</span>
+          </div>
+          <span class="font-semibold tracking-tight text-lg">OmIndia</span>
+        </div>
+        <button onclick="startChat()" class="px-5 py-2 rounded-full bg-white/5 border border-white/10 text-sm font-medium hover:bg-white/10 transition">
+          Start Chat
+        </button>
+      </div>
+    </nav>
+
+    <section class="pt-32 pb-24 px-6 text-center">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-cyan-400 mb-8">
+        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+        Live in India • Free • No signup
+      </div>
+      
+      <h1 class="text-5xl sm:text-6xl md:text-7xl font-semibold tracking-tighter leading-[1.1] mb-6">
+        Random Video Chat<br>
+        <span class="gradient-text">for India</span>
+      </h1>
+      
+      <p class="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-12">
+        Instantly match with real people across India. Hindi, English & regional languages.
+      </p>
+      
+      <button onclick="startChat()" class="px-10 py-4 rounded-2xl bg-gradient-to-r from-cyan-400 to-violet-500 text-slate-950 font-semibold text-lg shadow-glow-cyan hover:opacity-95 transition">
+        Start Random Chat
+      </button>
+    </section>
+
+    <section class="py-16 px-6">
+      <div class="max-w-5xl mx-auto grid sm:grid-cols-3 gap-6">
+        <div class="glass rounded-2xl p-8 text-center">
+          <h3 class="font-semibold mb-2">India First</h3>
+          <p class="text-slate-400 text-sm">Priority matching with Indian users</p>
+        </div>
+        <div class="glass rounded-2xl p-8 text-center">
+          <h3 class="font-semibold mb-2">100% Free</h3>
+          <p class="text-slate-400 text-sm">No coins or premium walls</p>
+        </div>
+        <div class="glass rounded-2xl p-8 text-center">
+          <h3 class="font-semibold mb-2">Anonymous</h3>
+          <p class="text-slate-400 text-sm">No name or phone required</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="border-t border-white/5 py-10 text-center text-sm text-slate-500">
+      © 2026 OmIndia • Made for India
+    </footer>
+  </div>
+
+  <!-- CHAT UI -->
+  <div id="chatUI" class="fixed inset-0 z-50 hidden bg-slate-950 flex flex-col">
+    <div class="glass border-b border-white/5 px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div id="statusDot" class="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
+        <span class="text-sm font-medium" id="statusText">Connecting...</span>
+      </div>
+      <button onclick="endChat()" class="text-sm text-slate-400 hover:text-white px-3 py-1 rounded-lg hover:bg-white/5 transition">
+        Leave
+      </button>
+    </div>
+
+    <div class="flex-1 relative bg-black">
+      <video id="remoteVideo" autoplay playsinline class="absolute inset-0 w-full h-full"></video>
+      
+      <div id="remotePlaceholder" class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950">
+        <div class="text-center">
+          <div class="w-20 h-20 mx-auto mb-5 rounded-full border-2 border-cyan-400/30 flex items-center justify-center">
+            <div class="w-12 h-12 rounded-full bg-cyan-400/20 animate-pulse"></div>
+          </div>
+          <p class="text-slate-400" id="matchStatus">Looking for someone in India...</p>
+        </div>
+      </div>
+
+      <div class="absolute bottom-6 right-6 w-28 h-40 sm:w-36 sm:h-52 rounded-2xl overflow-hidden border border-white/20 shadow-2xl bg-slate-900 z-10">
+        <video id="localVideo" autoplay playsinline muted class="w-full h-full"></video>
+      </div>
+    </div>
+
+    <div class="glass border-t border-white/5 p-5 flex items-center justify-center gap-5">
+      <button onclick="nextChat()" class="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition active:scale-95" title="Next">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+        </svg>
+      </button>
+
+      <button id="micBtn" onclick="toggleMic()" class="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition active:scale-95" title="Mute">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+        </svg>
+      </button>
+
+      <button id="camBtn" onclick="toggleCam()" class="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition active:scale-95" title="Camera">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ====================== CONFIG ======================
+    const SIGNALING_URL = 'http://localhost:3000';  // Change this to your server
+
+    // ====================== STATE ======================
+    let socket = null;
+    let peerConnection = null;
+    let localStream = null;
+    let currentRoomId = null;
+    let isMicOn = true;
+    let isCamOn = true;
+
+    // ====================== ICE SERVERS (TURN READY) ======================
+    // Replace the TURN credentials with your real ones (Metered / Twilio / coturn)
+    const iceServers = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+
+        // ===== TURN SERVERS (IMPORTANT FOR INDIA) =====
+        // Example for Metered.ca - replace with your credentials
+        {
+          urls: 'turn:a.relay.metered.ca:80',
+          username: 'YOUR_METERED_USERNAME',
+          credential: 'YOUR_METERED_CREDENTIAL'
+        },
+        {
+          urls: 'turn:a.relay.metered.ca:80?transport=tcp',
+          username: 'YOUR_METERED_USERNAME',
+          credential: 'YOUR_METERED_CREDENTIAL'
+        },
+        {
+          urls: 'turn:a.relay.metered.ca:443',
+          username: 'YOUR_METERED_USERNAME',
+          credential: 'YOUR_METERED_CREDENTIAL'
+        },
+        {
+          urls: 'turns:a.relay.metered.ca:443?transport=tcp',
+          username: 'YOUR_METERED_USERNAME',
+          credential: 'YOUR_METERED_CREDENTIAL'
+        }
+
+        // For self-hosted coturn, use something like:
+        // {
+        //   urls: [
+        //     'turn:turn.yourdomain.com:3478?transport=udp',
+        //     'turn:turn.yourdomain.com:3478?transport=tcp',
+        //     'turns:turn.yourdomain.com:5349?transport=tcp'
+        //   ],
+        //   username: 'omindia',
+        //   credential: 'your-strong-password'
+        // }
+      ]
+    };
+
+    // ====================== AGE GATE ======================
+    function confirmAge(isAdult) {
+      if (isAdult) {
+        document.getElementById('ageGate').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+      } else {
+        document.getElementById('ageGate').innerHTML = `
+          <div class="glass rounded-3xl p-10 max-w-md mx-4 text-center">
+            <h2 class="text-2xl font-semibold mb-4">Sorry</h2>
+            <p class="text-slate-400">You must be 18 or older to use OmIndia.</p>
+          </div>`;
+      }
+    }
+
+    // ====================== START CHAT ======================
+    async function startChat() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' },
+          audio: true
+        });
+
+        document.getElementById('localVideo').srcObject = localStream;
+        document.getElementById('chatUI').classList.remove('hidden');
+        document.getElementById('mainApp').classList.add('hidden');
+        setStatus('Connecting...', 'yellow');
+
+        socket = io(SIGNALING_URL, { transports: ['websocket', 'polling'] });
+
+        socket.on('connect', () => {
+          console.log('Connected to signaling server');
+          socket.emit('join', { country: 'IN' });
+          setStatus('Looking for someone in India...', 'yellow');
+        });
+
+        socket.on('waiting', () => {
+          setStatus('Looking for someone in India...', 'yellow');
+          showPlaceholder(true);
+        });
+
+        socket.on('matched', async ({ roomId, isInitiator }) => {
+          currentRoomId = roomId;
+          setStatus('Connecting to partner...', 'yellow');
+          await createPeerConnection();
+
+          if (isInitiator) {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            socket.emit('offer', { roomId, offer });
+          }
+        });
+
+        socket.on('offer', async ({ offer }) => {
+          if (!peerConnection) await createPeerConnection();
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          socket.emit('answer', { roomId: currentRoomId, answer });
+        });
+
+        socket.on('answer', async ({ answer }) => {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        });
+
+        socket.on('ice-candidate', async ({ candidate }) => {
+          if (candidate && peerConnection) {
+            try {
+              await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (e) {
+              console.warn('ICE candidate error', e);
+            }
+          }
+        });
+
+        socket.on('partner-left', () => {
+          setStatus('Partner left. Finding next...', 'yellow');
+          cleanupPeer();
+          showPlaceholder(true);
+          setTimeout(() => {
+            if (socket?.connected) socket.emit('next');
+          }, 700);
+        });
+
+        socket.on('disconnect', () => {
+          setStatus('Disconnected', 'red');
+          cleanupPeer();
+        });
+
+        socket.on('connect_error', () => {
+          setStatus('Cannot reach server', 'red');
+        });
+
+      } catch (err) {
+        console.error(err);
+        alert('Camera or Microphone access denied.\nPlease allow permissions and try again.');
+      }
+    }
+
+    // ====================== PEER CONNECTION ======================
+    async function createPeerConnection() {
+      peerConnection = new RTCPeerConnection(iceServers);
+
+      localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+      });
+
+      peerConnection.ontrack = (event) => {
+        document.getElementById('remoteVideo').srcObject = event.streams[0];
+        showPlaceholder(false);
+        setStatus('Connected • India', 'green');
+      };
+
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate && currentRoomId) {
+          socket.emit('ice-candidate', {
+            roomId: currentRoomId,
+            candidate: event.candidate
+          });
+        }
+      };
+
+      peerConnection.onconnectionstatechange = () => {
+        const state = peerConnection.connectionState;
+        if (state === 'connected') {
+          setStatus('Connected • India', 'green');
+          showPlaceholder(false);
+        } else if (state === 'failed' || state === 'disconnected') {
+          setStatus('Connection problem', 'red');
+        }
+      };
+    }
+
+    // ====================== CONTROLS ======================
+    function nextChat() {
+      if (!socket) return;
+      cleanupPeer();
+      showPlaceholder(true);
+      setStatus('Finding next person...', 'yellow');
+      socket.emit('next');
+    }
+
+    function endChat() {
+      if (socket) {
+        socket.emit('leave');
+        socket.disconnect();
+        socket = null;
+      }
+      cleanupPeer();
+
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+      }
+
+      document.getElementById('chatUI').classList.add('hidden');
+      document.getElementById('mainApp').classList.remove('hidden');
+      document.getElementById('localVideo').srcObject = null;
+      document.getElementById('remoteVideo').srcObject = null;
+    }
+
+    function toggleMic() {
+      if (!localStream) return;
+      isMicOn = !isMicOn;
+      localStream.getAudioTracks().forEach(t => t.enabled = isMicOn);
+      document.getElementById('micBtn').classList.toggle('bg-red-500/30', !isMicOn);
+    }
+
+    function toggleCam() {
+      if (!localStream) return;
+      isCamOn = !isCamOn;
+      localStream.getVideoTracks().forEach(t => t.enabled = isCamOn);
+      document.getElementById('camBtn').classList.toggle('bg-red-500/30', !isCamOn);
+    }
+
+    // ====================== HELPERS ======================
+    function cleanupPeer() {
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      currentRoomId = null;
+      document.getElementById('remoteVideo').srcObject = null;
+    }
+
+    function setStatus(text, color = 'yellow') {
+      document.getElementById('statusText').textContent = text;
+      const dot = document.getElementById('statusDot');
+      dot.className = 'w-2.5 h-2.5 rounded-full ' +
+        (color === 'green' ? 'bg-green-400' :
+         color === 'red'   ? 'bg-red-400'   : 'bg-yellow-400');
+    }
+
+    function showPlaceholder(show) {
+      document.getElementById('remotePlaceholder').classList.toggle('hidden', !show);
+    }
+  </script>
 </body>
 </html>
