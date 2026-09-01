@@ -1,0 +1,655 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Official website of author Pooja Malhotra — books, writing, events and more.">
+  <title>Pooja Malhotra — Author</title>  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">  <style>
+    :root {
+      --cream: #f7f3ec;
+      --paper: #fffdf9;
+      --ink: #25221f;
+      --muted: #766e67;
+      --accent: #8e3d45;
+      --accent-dark: #682b32;
+      --line: #ded7ce;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--cream);
+      color: var(--ink);
+      font-family: "DM Sans", sans-serif;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3 {
+      font-family: "Cormorant Garamond", serif;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1160px, 90%);
+      margin: auto;
+    }
+
+    /* NAVIGATION */
+
+    nav {
+      height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .logo {
+      font-family: "Cormorant Garamond", serif;
+      font-size: 27px;
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .nav-links a {
+      transition: color .2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    .menu {
+      display: none;
+      font-size: 25px;
+      cursor: pointer;
+    }
+
+    /* HERO */
+
+    .hero {
+      min-height: calc(100vh - 82px);
+      display: grid;
+      grid-template-columns: 1.05fr .95fr;
+      align-items: center;
+      gap: 70px;
+      padding: 80px 0;
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 25px;
+    }
+
+    .hero h1 {
+      font-size: clamp(70px, 9vw, 125px);
+      letter-spacing: -4px;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 span {
+      display: block;
+      color: var(--accent);
+      font-style: italic;
+      font-weight: 400;
+    }
+
+    .hero-text {
+      max-width: 530px;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.8;
+      margin-bottom: 35px;
+    }
+
+    .button {
+      display: inline-block;
+      background: var(--ink);
+      color: white;
+      padding: 15px 27px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      transition: all .25s;
+    }
+
+    .button:hover {
+      background: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .hero-image {
+      position: relative;
+      height: 620px;
+      background:
+        linear-gradient(145deg, rgba(142,61,69,.08), rgba(0,0,0,.08)),
+        url("https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1000&q=85")
+        center/cover;
+    }
+
+    .hero-image::after {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border: 1px solid rgba(255,255,255,.55);
+    }
+
+    .image-caption {
+      position: absolute;
+      bottom: -18px;
+      left: -18px;
+      background: var(--paper);
+      padding: 17px 22px;
+      font-family: "Cormorant Garamond", serif;
+      font-size: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    }
+
+    /* ABOUT */
+
+    section {
+      padding: 110px 0;
+    }
+
+    .section-label {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 11px;
+      margin-bottom: 18px;
+      font-weight: 600;
+    }
+
+    .about {
+      background: var(--paper);
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: .75fr 1.25fr;
+      gap: 100px;
+      align-items: center;
+    }
+
+    .about h2 {
+      font-size: clamp(50px, 6vw, 78px);
+    }
+
+    .about-copy {
+      font-size: 18px;
+      color: var(--muted);
+      line-height: 1.9;
+    }
+
+    .about-copy p + p {
+      margin-top: 22px;
+    }
+
+    /* BOOKS */
+
+    .books-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      margin-bottom: 55px;
+    }
+
+    .books-header h2 {
+      font-size: 65px;
+    }
+
+    .books-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+
+    .book {
+      background: var(--paper);
+      padding: 25px;
+      transition: transform .3s, box-shadow .3s;
+    }
+
+    .book:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 45px rgba(0,0,0,.09);
+    }
+
+    .book-cover {
+      aspect-ratio: 3 / 4;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 35px;
+      margin-bottom: 25px;
+      background: #27221f;
+      color: white;
+    }
+
+    .book:nth-child(2) .book-cover {
+      background: #70474a;
+    }
+
+    .book:nth-child(3) .book-cover {
+      background: #343c38;
+    }
+
+    .book-cover small {
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      font-size: 9px;
+      margin-bottom: 30px;
+      opacity: .8;
+    }
+
+    .book-cover strong {
+      font-family: "Cormorant Garamond", serif;
+      font-size: 40px;
+      line-height: .95;
+    }
+
+    .book-cover em {
+      margin-top: 30px;
+      font-family: "Cormorant Garamond", serif;
+      font-size: 17px;
+    }
+
+    .book h3 {
+      font-size: 29px;
+      margin-bottom: 8px;
+    }
+
+    .book p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* QUOTE */
+
+    .quote {
+      background: var(--accent);
+      color: white;
+      text-align: center;
+    }
+
+    .quote blockquote {
+      max-width: 850px;
+      margin: auto;
+      font-family: "Cormorant Garamond", serif;
+      font-size: clamp(35px, 5vw, 65px);
+      line-height: 1.08;
+      font-style: italic;
+    }
+
+    .quote cite {
+      display: block;
+      margin-top: 28px;
+      font-family: "DM Sans", sans-serif;
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-style: normal;
+      opacity: .8;
+    }
+
+    /* WRITING */
+
+    .writing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 70px;
+    }
+
+    .writing h2 {
+      font-size: 65px;
+      margin-bottom: 30px;
+    }
+
+    .article {
+      padding: 25px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .article:last-child {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .article-date {
+      color: var(--accent);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .article h3 {
+      font-size: 30px;
+      margin: 10px 0;
+    }
+
+    .article p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* CONTACT */
+
+    .contact {
+      background: var(--paper);
+      text-align: center;
+    }
+
+    .contact h2 {
+      font-size: clamp(55px, 8vw, 95px);
+      margin-bottom: 20px;
+    }
+
+    .contact p {
+      color: var(--muted);
+      margin-bottom: 35px;
+    }
+
+    .email {
+      font-family: "Cormorant Garamond", serif;
+      font-size: 25px;
+      color: var(--accent);
+    }
+
+    /* FOOTER */
+
+    footer {
+      padding: 35px 0;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .socials {
+      display: flex;
+      gap: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* MOBILE */
+
+    @media (max-width: 800px) {
+      .nav-links {
+        display: none;
+      }
+
+      .menu {
+        display: block;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 60px 0;
+      }
+
+      .hero h1 {
+        font-size: 72px;
+      }
+
+      .hero-image {
+        height: 480px;
+      }
+
+      .about-grid,
+      .writing-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      .books-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .books-header {
+        display: block;
+      }
+
+      .books-header h2,
+      .writing h2 {
+        font-size: 55px;
+      }
+
+      footer {
+        flex-direction: column;
+        gap: 20px;
+      }
+    }
+  </style></head><body>  <div class="container">
+    <nav>
+      <a href="#" class="logo">Pooja Malhotra</a>  <div class="nav-links">
+    <a href="#about">About</a>
+    <a href="#books">Books</a>
+    <a href="#writing">Writing</a>
+    <a href="#contact">Contact</a>
+  </div>
+
+  <div class="menu">☰</div>
+</nav>
+
+  </div>  <main><!-- HERO -->
+<section class="hero container">
+
+  <div>
+    <div class="eyebrow">Author · Writer · Storyteller</div>
+
+    <h1>
+      Pooja
+      <span>Malhotra</span>
+    </h1>
+
+    <p class="hero-text">
+      Stories about people, places and the quiet moments that
+      change everything. Welcome to the world of Pooja Malhotra.
+    </p>
+
+    <a href="#books" class="button">Explore the Books</a>
+  </div>
+
+  <div class="hero-image">
+    <div class="image-caption">Words have their own worlds.</div>
+  </div>
+
+</section>
+
+<!-- ABOUT -->
+<section class="about" id="about">
+  <div class="container about-grid">
+
+    <div>
+      <div class="section-label">About the Author</div>
+      <h2>A life<br>in words.</h2>
+    </div>
+
+    <div class="about-copy">
+      <p>
+        Pooja Malhotra is an author and storyteller whose work explores
+        human relationships, identity, memory and the beautifully
+        complicated spaces between people.
+      </p>
+
+      <p>
+        Her writing is rooted in observation and emotion — finding
+        extraordinary stories in ordinary lives and giving quiet voices
+        a place to be heard.
+      </p>
+
+      <p>
+        Through fiction, essays and personal reflections, Pooja invites
+        readers to slow down, look closer and discover something of
+        themselves in every story.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- BOOKS -->
+<section id="books">
+  <div class="container">
+
+    <div class="books-header">
+      <div>
+        <div class="section-label">Selected Works</div>
+        <h2>Books</h2>
+      </div>
+
+      <a href="#contact" class="button">Book Enquiries</a>
+    </div>
+
+    <div class="books-grid">
+
+      <article class="book">
+        <div class="book-cover">
+          <small>A Novel</small>
+          <strong>THE<br>QUIET<br>BETWEEN</strong>
+          <em>Pooja Malhotra</em>
+        </div>
+        <h3>The Quiet Between</h3>
+        <p>A story about love, distance and everything left unsaid.</p>
+      </article>
+
+      <article class="book">
+        <div class="book-cover">
+          <small>Stories</small>
+          <strong>WHEN<br>THE<br>RAIN CAME</strong>
+          <em>Pooja Malhotra</em>
+        </div>
+        <h3>When the Rain Came</h3>
+        <p>A collection of intimate stories about beginnings and endings.</p>
+      </article>
+
+      <article class="book">
+        <div class="book-cover">
+          <small>Essays</small>
+          <strong>SMALL<br>THINGS</strong>
+          <em>Pooja Malhotra</em>
+        </div>
+        <h3>Small Things</h3>
+        <p>Reflections on everyday life, memory and finding meaning.</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- QUOTE -->
+<section class="quote">
+  <div class="container">
+    <blockquote>
+      “Every person carries a story.
+      Sometimes all they need is someone
+      willing to listen.”
+    </blockquote>
+    <cite>— Pooja Malhotra</cite>
+  </div>
+</section>
+
+<!-- WRITING -->
+<section class="writing" id="writing">
+  <div class="container writing-grid">
+
+    <div>
+      <div class="section-label">From the Desk</div>
+      <h2>Recent<br>Writing</h2>
+
+      <p class="hero-text">
+        Thoughts, observations and stories from Pooja's notebook.
+      </p>
+    </div>
+
+    <div>
+
+      <article class="article">
+        <span class="article-date">September 2026</span>
+        <h3>The Art of Paying Attention</h3>
+        <p>
+          On noticing the small details that make ordinary days memorable.
+        </p>
+      </article>
+
+      <article class="article">
+        <span class="article-date">August 2026</span>
+        <h3>Why We Keep Old Letters</h3>
+        <p>
+          A reflection on memory, handwriting and the things we refuse to forget.
+        </p>
+      </article>
+
+      <article class="article">
+        <span class="article-date">July 2026</span>
+        <h3>Writing the Unspoken</h3>
+        <p>
+          Finding a language for feelings that don't always have names.
+        </p>
+      </article>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="contact" id="contact">
+  <div class="container">
+
+    <div class="section-label">Get in Touch</div>
+
+    <h2>Let's talk.</h2>
+
+    <p>
+      For literary events, interviews, collaborations and professional enquiries.
+    </p>
+
+    <a class="email" href="mailto:hello@poojamalhotra.com">
+      hello@poojamalhotra.com
+    </a>
+
+  </div>
+</section>
+
+  </main>  <div class="container">
+    <footer>
+      <span>© 2026 Pooja Malhotra. All rights reserved.</span>  <div class="socials">
+    <a href="#">Instagram</a>
+    <a href="#">Facebook</a>
+    <a href="#">LinkedIn</a>
+  </div>
+</footer>
+
+  </div></body>
+  </html>
