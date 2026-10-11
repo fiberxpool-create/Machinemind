@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#263f35" />
+<title>ParkPilot — Parking Operations</title>
+<style>
+  :root {
+    --navy: #263f35;
+    --navy-2: #385848;
+    --blue: #496b50;
+    --blue-dark: #36553e;
+    --blue-soft: #edf3ee;
+    --bg: #f7f7f3;
+    --panel: #ffffff;
+    --text: #25332b;
+    --muted: #70796f;
+    --line: #e2e5dd;
+    --green: #4e7657;
+    --green-soft: #edf5ed;
+    --yellow: #ffc94a;
+    --yellow-soft: #fff6d8;
+    --red: #c43e4d;
+    --red-soft: #fff0f1;
+    --shadow: 0 8px 28px rgba(38, 63, 53, .06);
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  html { min-width: 320px; background: var(--bg); }
+  body { margin: 0; color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.45; }
+  button, input, select, textarea { font: inherit; }
+  button { cursor: pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(40,100,232,.28); outline-offset: 2px; }
+  .app-shell { min-height: 100vh; }
+  .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 20; width: 242px; padding: 25px 16px 18px; color: #fff; background: var(--navy); display: flex; flex-direction: column; }
+  .brand { display:flex; align-items:center; gap: 11px; padding: 0 12px 34px; }
+  .brand-mark { width: 39px; height:39px; flex:none; border-radius: 12px; display:grid; place-items:center; color: #fff; font-weight: 800; letter-spacing:-1px; background: linear-gradient(145deg,#6f8c72,#496b50); box-shadow: 0 6px 18px rgba(40,100,232,.25); }
+  .brand-name { font-size: 19px; letter-spacing: -.6px; font-weight: 760; }
+  .brand-tag { font-size: 10px; color: #aabbd7; margin-top: 1px; letter-spacing: .8px; text-transform: uppercase; }
+  .nav-label { color: #899bb9; font-size: 10px; letter-spacing: 1.5px; font-weight: 750; padding: 0 14px 10px; text-transform: uppercase; }
+  .nav-list { display:grid; gap: 6px; }
+  .nav-item { border:0; width:100%; text-align:left; color:#b9c7dc; background:transparent; padding:12px 14px; border-radius: 11px; display:flex; align-items:center; gap:13px; font-weight:600; transition: background .15s ease, color .15s ease; }
+  .nav-item:hover { background: rgba(255,255,255,.07); color:#fff; }
+  .nav-item.active { color:#fff; background:#2d4a76; box-shadow: inset 3px 0 0 #b4c8a9; }
+  .nav-icon { width:20px; display:inline-grid; place-items:center; font-size:17px; }
+  .sidebar-bottom { margin-top:auto; }
+  .local-note { margin: 20px 5px 0; border: 1px solid rgba(255,255,255,.13); background:rgba(255,255,255,.045); border-radius:13px; padding:13px; color:#c5d2e5; font-size:11px; line-height:1.5; }
+  .local-note strong { display:block; color:#fff; margin-bottom:3px; font-size:12px; }
+  .main-area { margin-left:242px; min-height:100vh; }
+  .topbar { min-height: 76px; padding: 17px 34px; display:flex; align-items:center; justify-content:space-between; gap:18px; background:#fff; border-bottom:1px solid var(--line); }
+  .page-heading { min-width:0; }
+  .eyebrow { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1.25px; font-weight:750; }
+  .topbar h1 { margin:2px 0 0; font-size:21px; letter-spacing:-.55px; line-height:1.2; }
+  .topbar-actions { display:flex; align-items:center; gap:10px; }
+  .local-chip { display:flex; align-items:center; gap:7px; color:#60728b; font-size:12px; background:#f5f7fb; border:1px solid var(--line); border-radius:99px; padding:8px 11px; white-space:nowrap; }
+  .live-dot { height:7px; width:7px; border-radius:50%; background:#27a875; box-shadow:0 0 0 3px #dff5e9; }
+  .avatar { width:36px; height:36px; border-radius:50%; display:grid; place-items:center; background:#e8efff; color:var(--blue-dark); font-weight:800; font-size:12px; }
+  .content { padding: 28px 34px 52px; max-width: 1540px; margin:0 auto; }
+  .page { display:none; }
+  .page.active { display:block; animation: appear .16s ease-out; }
+  @keyframes appear { from {opacity:.45; transform:translateY(3px)} to {opacity:1; transform:translateY(0)} }
+  .welcome-row { display:flex; justify-content:space-between; align-items:flex-end; gap:18px; margin-bottom:24px; }
+  .welcome-row h2 { margin:0; font-size:25px; letter-spacing:-.8px; }
+  .welcome-row p { color:var(--muted); margin:6px 0 0; }
+  .actions { display:flex; gap:9px; flex-wrap:wrap; }
+  .btn { border:1px solid transparent; border-radius:10px; padding:10px 14px; min-height:40px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-weight:700; transition:background .15s, border-color .15s, transform .08s; }
+  .btn:active { transform:translateY(1px); }
+  .btn-primary { color:#fff; background:var(--blue); box-shadow:0 3px 7px rgba(40,100,232,.16); }
+  .btn-primary:hover { background:var(--blue-dark); }
+  .btn-secondary { color:var(--navy); background:#fff; border-color:#d8e0ec; }
+  .btn-secondary:hover { background:#f7f9fc; border-color:#bdcbe0; }
+  .btn-soft { background:var(--blue-soft); color:var(--blue-dark); }
+  .btn-danger { color:var(--red); border-color:#f0cdd1; background:#fff; }
+  .btn-danger:hover { background:var(--red-soft); }
+  .btn-quiet { color:var(--muted); background:transparent; border-color:transparent; }
+  .btn-small { min-height:32px; padding:6px 10px; border-radius:8px; font-size:12px; }
+  .metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:15px; margin-bottom:24px; }
+  .metric { background:#fff; border:1px solid var(--line); border-radius:15px; padding:18px; min-width:0; box-shadow:0 2px 4px rgba(24,43,76,.015); }
+  .metric-top { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--muted); font-size:12px; font-weight:600; }
+  .metric-icon { width:34px; height:34px; display:grid; place-items:center; border-radius:10px; background:#f0f4fb; color:var(--navy-2); font-size:16px; }
+  .metric-value { font-size:30px; font-weight:800; letter-spacing:-1.2px; line-height:1; margin:15px 0 8px; }
+  .metric-foot { color:var(--muted); font-size:11px; }
+  .metric-foot .green { color:var(--green); font-weight:700; }
+  .dashboard-grid { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(280px,.85fr); gap:18px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; min-width:0; }
+  .panel-head { padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:14px; border-bottom:1px solid #edf0f5; }
+  .panel-head h3 { margin:0; font-size:15px; letter-spacing:-.25px; }
+  .panel-head p { margin:3px 0 0; color:var(--muted); font-size:12px; }
+  .panel-body { padding:18px 20px; }
+  .area-list { display:grid; gap:10px; }
+  .area-row-card { border:1px solid var(--line); border-radius:12px; padding:13px; display:flex; gap:12px; align-items:center; justify-content:space-between; min-width:0; }
+  .area-row-card:hover { border-color:#c8d7f5; background:#fcfdff; }
+  .area-identity { min-width:0; display:flex; gap:12px; align-items:center; }
+  .area-symbol { width:40px; height:40px; border-radius:11px; display:grid; place-items:center; flex:none; color:var(--blue-dark); background:#edf3ff; font-size:18px; }
+  .area-title { font-weight:760; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .area-subtitle { color:var(--muted); font-size:11px; margin-top:4px; }
+  .area-info { min-width:0; }
+  .area-status { text-align:right; flex:none; }
+  .occupancy-text { font-size:12px; font-weight:750; }
+  .progress { width:104px; height:5px; border-radius:99px; background:#ecf0f6; overflow:hidden; margin-top:7px; }
+  .progress > span { height:100%; display:block; background:var(--blue); border-radius:99px; }
+  .quick-card { padding:20px; background:linear-gradient(135deg,#eff4ff,#f8faff); border:1px solid #dce7ff; border-radius:var(--radius); }
+  .quick-card .quick-icon { width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#fff;color:var(--blue);font-size:19px;box-shadow:0 3px 10px rgba(26,70,160,.08); }
+  .quick-card h3 { margin:15px 0 5px; font-size:17px; letter-spacing:-.35px; }
+  .quick-card p { margin:0 0 16px; color:#64748b; font-size:12px; }
+  .quick-card .btn { width:100%; }
+  .activity-panel { margin-top:18px; }
+  .activity-list { display:grid; }
+  .activity-item { display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid #f0f2f6; }
+  .activity-item:last-child { border-bottom:0; padding-bottom:0; }
+  .activity-bullet { width:30px;height:30px;flex:none;border-radius:9px;background:#f1f5fb;color:#526a8e;display:grid;place-items:center; }
+  .activity-main { min-width:0; flex:1; }
+  .activity-main strong { font-size:12px; font-weight:700; }
+  .activity-main p { margin:3px 0 0; color:var(--muted); font-size:11px; }
+  .activity-time { color:#8793a5; font-size:10px; white-space:nowrap; }
+  .empty-state { text-align:center; padding:35px 18px; color:var(--muted); }
+  .empty-illustration { margin:0 auto 12px; width:54px;height:54px;border-radius:17px;background:#f0f4fb;color:#7890b5;display:grid;place-items:center;font-size:25px; }
+  .empty-state h4 { margin:0 0 5px; color:var(--text); font-size:14px; }
+  .empty-state p { font-size:12px; max-width:330px; margin:0 auto 15px; line-height:1.6; }
+  .section-title-row { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:20px; }
+  .section-title-row h2 { margin:0; font-size:23px; letter-spacing:-.7px; }
+  .section-title-row p { color:var(--muted); margin:5px 0 0; }
+  .area-select-panel { display:flex; flex-wrap:wrap; align-items:center; gap:12px; background:#fff; border:1px solid var(--line); padding:14px 16px; border-radius:14px; margin-bottom:18px; }
+  .area-select-panel label { color:var(--muted); font-size:12px; font-weight:700; }
+  .select-control { color:var(--text); min-height:39px; background:#fff; border:1px solid #d9e1ed; border-radius:9px; padding:8px 35px 8px 11px; max-width:100%; }
+  .area-select-panel .select-control { min-width:220px; flex:1; }
+  .area-select-panel .spacer { flex:1; }
+  .layout-panel { padding:20px; }
+  .layout-top { display:flex; justify-content:space-between; align-items:flex-start; gap:15px; margin-bottom:18px; }
+  .layout-top h3 { margin:0; font-size:17px; letter-spacing:-.4px; }
+  .layout-top p { color:var(--muted); margin:5px 0 0; font-size:12px; }
+  .badge { display:inline-flex; align-items:center; gap:5px; padding:5px 9px; border-radius:99px; font-size:10px; font-weight:800; white-space:nowrap; }
+  .badge-available { color:#3a725c; background:#e7f6ee; }
+  .badge-occupied { color:#fff; background:#2b5fb8; }
+  .badge-yellow { color:#6f5200; background:#fff0b8; }
+  .row-tools { display:flex; align-items:center; flex-wrap:wrap; gap:9px; background:#f8faff; border:1px solid #e4ebf8; padding:12px; border-radius:12px; margin-bottom:18px; }
+  .row-tools label { font-size:12px; font-weight:750; color:#52647c; }
+  .row-tools .select-control { min-width:125px; }
+  .row-name { font-weight:800; font-size:14px; color:var(--navy); margin-right:auto; }
+  .spaces-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .spaces-head h4 { margin:0; font-size:13px; }
+  .spaces-head span { font-size:11px; color:var(--muted); }
+  .spaces-scroll { overflow-x:auto; padding:3px 1px 10px; scrollbar-width:thin; }
+  .spaces-grid { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(136px, 1fr); gap:10px; min-width:max-content; }
+  .space-card { position:relative; width:136px; min-height:135px; border:1px solid #dfe6ef; border-radius:13px; background:#fbfcfe; padding:12px; text-align:left; color:var(--text); display:flex; flex-direction:column; align-items:stretch; transition:border-color .15s, box-shadow .15s, background .15s; }
+  .space-card:hover { border-color:#9eb8ec; box-shadow:0 4px 13px rgba(39,85,160,.08); }
+  .space-card.occupied { color:#fff; background:#2e5fae; border-color:#2e5fae; }
+  .space-card.target { background:var(--yellow-soft); border:2px solid var(--yellow); color:#463710; box-shadow:0 0 0 3px rgba(255,201,74,.22); }
+  .space-top { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .space-code { font-size:18px; font-weight:850; letter-spacing:-.5px; }
+  .space-state-dot { display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ca47c;flex:none; }
+  .occupied .space-state-dot { background:#a9d3ff; }
+  .target .space-state-dot { background:#d5a100; }
+  .space-plate { margin-top:17px; font-size:12px; line-height:1.3; font-weight:800; overflow-wrap:anywhere; }
+  .space-caption { margin-top:4px; font-size:10px; opacity:.75; }
+  .space-action { margin-top:auto; padding-top:11px; font-size:11px; font-weight:750; display:flex; align-items:center; justify-content:space-between; }
+  .location-banner { display:flex; align-items:flex-start; gap:12px; background:#fff7d9; border:1px solid #f5d976; border-radius:12px; padding:13px 15px; margin-bottom:16px; }
+  .location-banner .pin { font-size:19px; }
+  .location-banner-content { flex:1; min-width:0; }
+  .location-banner strong { color:#5b470a; font-size:12px; }
+  .location-banner p { color:#66572c; font-size:12px; margin:4px 0 0; }
+  .search-hero { border-radius:20px; padding:25px; background:linear-gradient(115deg,#172b4d,#244878); color:#fff; margin-bottom:20px; overflow:hidden; position:relative; }
+  .search-hero:after { content:""; position:absolute; right:-55px; top:-90px; width:250px;height:250px;border:1px solid rgba(255,255,255,.11);border-radius:50%; box-shadow:0 0 0 30px rgba(255,255,255,.035),0 0 0 65px rgba(255,255,255,.025); pointer-events:none; }
+  .search-hero h2 { font-size:23px; margin:0 0 6px; letter-spacing:-.6px; }
+  .search-hero p { color:#c6d4e8; margin:0 0 19px; font-size:12px; }
+  .search-form { max-width:750px; display:flex; gap:9px; position:relative; z-index:1; }
+  .search-input-wrap { flex:1; position:relative; min-width:0; }
+  .search-input-wrap .search-symbol { position:absolute; left:15px; top:50%; transform:translateY(-50%); color:#73849e; font-size:17px; }
+  .search-input { width:100%; min-height:49px; border:1px solid #dfe6f0; border-radius:11px; background:#fff; padding:12px 14px 12px 43px; color:#17243a; font-size:14px; }
+  .search-input::placeholder { color:#96a2b4; }
+  .search-hint { position:relative; z-index:1; font-size:11px; color:#c5d5ec; margin-top:11px; }
+  .results-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:22px 0 12px; }
+  .results-header h3 { margin:0; font-size:15px; }
+  .results-count { font-size:11px; color:var(--muted); }
+  .results-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .result-card { border:1px solid var(--line); border-radius:14px; padding:16px; background:#fff; min-width:0; }
+  .result-top { display:flex; gap:12px; align-items:flex-start; justify-content:space-between; margin-bottom:15px; }
+  .plate-icon { width:39px; height:39px; display:grid; place-items:center; border-radius:11px; background:#edf3ff; color:var(--blue-dark); flex:none; font-size:18px; }
+  .result-plate { font-size:15px; font-weight:850; letter-spacing:.2px; overflow-wrap:anywhere; }
+  .result-location { color:var(--muted); font-size:11px; margin-top:4px; }
+  .result-details { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; background:#f7f9fc; border:1px solid #edf0f5; padding:11px; border-radius:10px; margin-bottom:14px; }
+  .result-detail-label { color:var(--muted); font-size:10px; margin-bottom:4px; }
+  .result-detail-value { font-weight:800; font-size:12px; overflow-wrap:anywhere; }
+  .result-actions { display:flex; flex-wrap:wrap; gap:8px; }
+  .result-actions .btn { flex:1; }
+  .search-empty { border:1px dashed #d8e1ee; background:#fff; border-radius:15px; padding:30px 16px; text-align:center; color:var(--muted); }
+  .search-empty strong { display:block; color:var(--text); margin-bottom:4px; font-size:13px; }
+  .search-empty p { margin:0; font-size:12px; }
+  .modal-backdrop { position:fixed; z-index:100; inset:0; background:rgba(14,28,50,.53); display:flex; align-items:center; justify-content:center; padding:18px; overflow-y:auto; backdrop-filter:blur(3px); }
+  .modal { width:min(100%,510px); background:#fff; border-radius:18px; box-shadow:0 22px 90px rgba(0,0,0,.23); overflow:hidden; max-height:calc(100vh - 36px); display:flex; flex-direction:column; }
+  .modal-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:21px 22px 16px; border-bottom:1px solid #edf0f5; }
+  .modal-head h3 { margin:0; font-size:18px; letter-spacing:-.4px; }
+  .modal-head p { color:var(--muted); margin:5px 0 0; font-size:12px; }
+  .icon-btn { width:34px;height:34px;border:0;border-radius:9px;background:#f3f6fa;color:#63738b;display:grid;place-items:center;font-size:20px; flex:none; }
+  .modal-body { padding:20px 22px; overflow-y:auto; }
+  .form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+  .field { display:grid; gap:6px; min-width:0; }
+  .field.full { grid-column:1/-1; }
+  .field label { color:#3d4e67; font-size:12px; font-weight:750; }
+  .field label .optional { color:#8793a5; font-weight:500; }
+  .field input, .field select, .field textarea { min-width:0; width:100%; color:var(--text); padding:11px 12px; border:1px solid #d8e1ed; background:#fff; border-radius:9px; }
+  .field textarea { min-height:80px; resize:vertical; }
+  .field-help { color:#7d8ba0; font-size:10px; line-height:1.5; }
+  .modal-foot { display:flex; justify-content:space-between; align-items:center; gap:9px; padding:14px 22px 20px; border-top:1px solid #edf0f5; }
+  .modal-foot-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+  .assignment-context { display:flex; gap:10px; align-items:center; background:#f5f8ff; border:1px solid #e1eaff; border-radius:11px; padding:12px; margin-bottom:17px; }
+  .assignment-context-icon { width:36px;height:36px;display:grid;place-items:center;background:#fff;border-radius:10px;color:var(--blue);font-size:17px; }
+  .assignment-context strong { display:block; font-size:12px; }
+  .assignment-context span { display:block; color:var(--muted); font-size:11px; margin-top:3px; }
+  .toast-stack { position:fixed; z-index:200; top:18px; right:18px; display:grid; gap:8px; width:min(360px,calc(100vw - 36px)); pointer-events:none; }
+  .toast { background:#fff; color:var(--text); border:1px solid var(--line); box-shadow:0 8px 30px rgba(17,35,65,.16); padding:12px 14px; border-radius:12px; display:flex; gap:10px; align-items:flex-start; font-size:12px; animation:toast-in .16s ease-out; }
+  .toast .toast-symbol { font-size:16px; }
+  .toast strong { display:block; margin-bottom:2px; }
+  .toast.success { border-left:4px solid #24956b; }
+  .toast.error { border-left:4px solid var(--red); }
+  @keyframes toast-in {from{transform:translateY(-5px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .mobile-brand { display:none; }
+  .mobile-nav { display:none; }
+  .muted { color:var(--muted); }
+  .tiny { font-size:11px; }
+  .visually-hidden { position:absolute!important; width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important; }
+  @media (max-width: 1100px) {
+    .content { padding:24px 23px 45px; }
+    .topbar { padding:16px 23px; }
+    .metrics { gap:10px; }
+    .metric { padding:15px; }
+    .dashboard-grid { grid-template-columns:minmax(0,1.25fr) minmax(260px,.8fr); }
+    .results-grid { grid-template-columns:1fr; }
+  }
+  @media (max-width: 820px) {
+    .sidebar { display:none; }
+    .main-area { margin-left:0; padding-bottom:74px; }
+    .topbar { min-height:68px; padding:13px 18px; }
+    .topbar h1 { font-size:19px; }
+    .content { padding:22px 17px 36px; }
+    .mobile-brand { display:flex; align-items:center; gap:8px; margin-bottom:18px; }
+    .mobile-brand .brand-mark { width:32px;height:32px;border-radius:10px;font-size:12px; }
+    .mobile-brand .brand-name { color:var(--navy); font-size:16px; }
+    .welcome-row { align-items:flex-start; flex-direction:column; }
+    .welcome-row h2 { font-size:22px; }
+    .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .dashboard-grid { grid-template-columns:1fr; }
+    .quick-card { order:-1; }
+    .mobile-nav { position:fixed; z-index:30; display:grid; grid-template-columns:repeat(3,1fr); bottom:0; left:0; right:0; padding:8px 9px calc(8px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.97); border-top:1px solid var(--line); backdrop-filter:blur(14px); }
+    .mobile-nav .nav-item { flex-direction:column; justify-content:center; text-align:center; gap:3px; padding:7px 4px; border-radius:10px; color:#718096; font-size:10px; }
+    .mobile-nav .nav-item.active { color:var(--blue-dark); background:#edf3ff; box-shadow:none; }
+    .mobile-nav .nav-icon { font-size:18px; }
+    .local-chip { display:none; }
+    .area-select-panel { align-items:stretch; }
+    .area-select-panel .select-control { min-width:0; width:100%; }
+    .area-select-panel label { width:100%; }
+    .area-select-panel .spacer { display:none; }
+    .layout-panel { padding:15px; }
+    .layout-top { flex-direction:column; }
+    .row-tools { align-items:stretch; }
+    .row-tools label { width:100%; }
+    .row-tools .select-control { flex:1; }
+    .row-name { width:100%; }
+    .search-hero { padding:22px 17px; }
+    .search-form { flex-direction:column; }
+    .search-form .btn { min-height:45px; }
+    .form-grid { grid-template-columns:1fr; }
+    .field.full { grid-column:auto; }
+    .modal-backdrop { align-items:flex-end; padding:0; }
+    .modal { width:100%; max-height:min(92vh, 850px); border-radius:20px 20px 0 0; padding-bottom:env(safe-area-inset-bottom); }
+    .modal-head { padding:19px 18px 14px; }
+    .modal-body { padding:17px 18px; }
+    .modal-foot { padding:13px 18px 18px; }
+  }
+  @media (max-width: 480px) {
+    .content { padding:18px 12px 29px; }
+    .topbar { padding:12px; }
+    .topbar h1 { font-size:17px; }
+    .avatar { width:32px;height:32px; }
+    .topbar-actions { gap:6px; }
+    .metrics { gap:8px; }
+    .metric { padding:12px; border-radius:13px; }
+    .metric-value { font-size:27px; }
+    .metric-icon { width:30px;height:30px; }
+    .metric-top { font-size:11px; }
+    .panel-head { padding:15px; }
+    .panel-body { padding:15px; }
+    .area-row-card { padding:10px; gap:8px; }
+    .area-symbol { width:34px;height:34px; }
+    .progress { width:76px; }
+    .area-title { max-width:150px; }
+    .actions .btn { flex:1; }
+    .section-title-row { align-items:flex-start; }
+    .section-title-row .btn { padding:8px 10px; }
+    .result-card { padding:12px; }
+    .result-details { gap:5px; padding:8px; }
+    .result-detail-value { font-size:11px; }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Main navigation">
+    <div class="brand"><div class="brand-mark">P</div><div><div class="brand-name">ParkPilot</div><div class="brand-tag">Parking operations</div></div></div>
+    <div class="nav-label">Workspace</div>
+    <nav class="nav-list">
+      <button class="nav-item active" data-action="navigate" data-page="dashboard"><span class="nav-icon">▦</span>Dashboard</button>
+      <button class="nav-item" data-action="navigate" data-page="manage"><span class="nav-icon">▤</span>Manage Parking</button>
+      <button class="nav-item" data-action="navigate" data-page="find"><span class="nav-icon">⌕</span>Find a Car</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="local-note"><strong>● Prototype mode</strong>Data is saved in this browser on this device. Export a backup regularly.</div>
+    </div>
+  </aside>
+  <main class="main-area">
+    <header class="topbar">
+      <div class="page-heading"><div class="eyebrow" id="header-eyebrow">PARKING SEWA OPERATIONS</div><h1 id="header-title">Dashboard</h1></div>
+      <div class="topbar-actions"><div class="local-chip"><span class="live-dot"></span>Local data active</div><div class="avatar" aria-label="ParkPilot operator">PP</div></div>
+    </header>
+    <div class="content">
+      <div class="mobile-brand"><div class="brand-mark">P</div><div class="brand-name">ParkPilot</div></div>
+      <section class="page active" id="page-dashboard" aria-label="Dashboard"></section>
+      <section class="page" id="page-manage" aria-label="Manage parking"></section>
+      <section class="page" id="page-find" aria-label="Find a car"></section>
+    </div>
+  </main>
+  <nav class="mobile-nav" aria-label="Mobile navigation">
+    <button class="nav-item active" data-action="navigate" data-page="dashboard"><span class="nav-icon">▦</span>Dashboard</button>
+    <button class="nav-item" data-action="navigate" data-page="manage"><span class="nav-icon">▤</span>Manage</button>
+    <button class="nav-item" data-action="navigate" data-page="find"><span class="nav-icon">⌕</span>Find a Car</button>
+  </nav>
+</div>
+<div id="modal-root"></div>
+<div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="false"></div>
+<input type="file" id="import-file" accept="application/json,.json" class="visually-hidden" />
+<script>
+(function () {
+  'use strict';
+  const STORAGE_KEY = 'parkpilot_data_v1';
+  const PAGE_META = {
+    dashboard: ['PARKING SEWA OPERATIONS', 'Dashboard'],
+    manage: ['SPACE MANAGEMENT', 'Manage Parking'],
+    find: ['VEHICLE LOOKUP', 'Find a Car']
+  };
+  const VEHICLE_MODELS = [
+    'Maruti Suzuki Alto K10','Maruti Suzuki Baleno','Maruti Suzuki Brezza','Maruti Suzuki Celerio','Maruti Suzuki Ciaz','Maruti Suzuki Dzire','Maruti Suzuki Eeco','Maruti Suzuki Ertiga','Maruti Suzuki Fronx','Maruti Suzuki Grand Vitara','Maruti Suzuki Ignis','Maruti Suzuki Jimny','Maruti Suzuki Swift','Maruti Suzuki WagonR','Maruti Suzuki XL6',
+    'Hyundai Aura','Hyundai Creta','Hyundai Exter','Hyundai Grand i10 Nios','Hyundai i20','Hyundai Tucson','Hyundai Venue','Hyundai Verna','Hyundai Alcazar',
+    'Tata Altroz','Tata Harrier','Tata Nexon','Tata Punch','Tata Safari','Tata Tiago','Tata Tigor','Tata Curvv',
+    'Mahindra Bolero','Mahindra Scorpio','Mahindra Scorpio-N','Mahindra Thar','Mahindra XUV 3XO','Mahindra XUV700','Mahindra XUV400',
+    'Toyota Camry','Toyota Fortuner','Toyota Glanza','Toyota Hyryder','Toyota Innova Crysta','Toyota Innova Hycross','Toyota Rumion','Toyota Urban Cruiser Taisor',
+    'Kia Carens','Kia Seltos','Kia Sonet','Kia Syros','Kia Carnival','Honda Amaze','Honda City','Honda Elevate','Honda City e:HEV',
+    'Volkswagen Taigun','Volkswagen Virtus','Skoda Kushaq','Skoda Slavia','Skoda Kodiaq','Renault Kwid','Renault Kiger','Renault Triber','Nissan Magnite',
+    'MG Astor','MG Comet EV','MG Hector','MG ZS EV','Jeep Compass','Jeep Meridian','BMW 3 Series','BMW 5 Series','BMW X1','BMW X3','BMW X5',
+    'Mercedes-Benz A-Class','Mercedes-Benz C-Class','Mercedes-Benz E-Class','Mercedes-Benz GLC','Mercedes-Benz GLE','Audi A4','Audi A6','Audi Q3','Audi Q5','Audi Q7',
+    'Volvo XC40','Volvo XC60','Land Rover Defender','Land Rover Discovery Sport','BYD Atto 3','BYD Seal','Citroen C3','Citroen Aircross','Force Gurkha','Isuzu D-Max','Other / Not listed'
+  ];
+  const state = {
+    page: 'dashboard', selectedAreaId: null, selectedRow: 1, searchQuery: '', modal: null,
+    highlight: null, backupImportPending: false
+  };
+  let data = loadData();
+
+  function uid(prefix) { return (prefix || 'id') + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8); }
+  function loadData() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (parsed && Array.isArray(parsed.areas) && Array.isArray(parsed.assignments)) {
+        return { areas: parsed.areas, assignments: parsed.assignments, activities: Array.isArray(parsed.activities) ? parsed.activities : [] };
+      }
+    } catch (e) { console.warn('Could not load ParkPilot data', e); }
+    return { areas: [], assignments: [], activities: [] };
+  }
+  function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    catch (e) { toast('Storage is full', 'Your changes may not persist. Export a backup and remove older data if needed.', 'error'); }
+  }
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  function numberToLetters(num) {
+    let out = '';
+    while (num > 0) { const rem = (num - 1) % 26; out = String.fromCharCode(65 + rem) + out; num = Math.floor((num - 1) / 26); }
+    return out;
+  }
+  function lettersToNumber(s) {
+    let num = 0;
+    for (const char of String(s).toUpperCase()) num = num * 26 + char.charCodeAt(0) - 64;
+    return num;
+  }
+  function normalizePlate(plate) { return String(plate || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+  function spaceId(a) { return `Row-${Number(a.row)}, ${String(a.col).toUpperCase()}`; }
+  function carDescription(a) { return [a.makeModel, a.carName].filter(Boolean).join(' · '); }
+  function modelOptions(selected) { return VEHICLE_MODELS.map(v => `<option value="${esc(v)}" ${selected === v ? 'selected' : ''}></option>`).join(''); }
+  function getArea(id) { return data.areas.find(a => a.id === id) || null; }
+  function selectedArea() { return getArea(state.selectedAreaId); }
+  function assignmentsForArea(areaId) { return data.assignments.filter(a => a.areaId === areaId); }
+  function assignmentAt(areaId, row, col) { return data.assignments.find(a => a.areaId === areaId && Number(a.row) === Number(row) && a.col === col) || null; }
+  function locatePlate(plate) { const norm = normalizePlate(plate); return data.assignments.find(a => normalizePlate(a.plate) === norm) || null; }
+  function locationText(a) {
+    const area = getArea(a.areaId);
+    return `${area ? area.name : 'Unknown area'}, Row-${a.row}, Column ${a.col}, Space ${spaceId(a)}`;
+  }
+  function directionsFor(a) {
+    const area = getArea(a.areaId);
+    const car = carDescription(a) ? ` (${carDescription(a)})` : ''; const base = `Vehicle ${a.plate}${car} is parked in ${area ? area.name : 'the selected parking area'}, Row-${a.row}, Column ${a.col}, Space ${spaceId(a)}.`;
+    const instructions = area && area.instructions ? ` ${area.instructions.trim().replace(/[.\s]+$/, '')}.` : '';
+    return `${base}${instructions} Select Row ${a.row} and follow the space labels to Column ${a.col}, ${spaceId(a)}.`;
+  }
+  function logActivity(title, detail, icon) {
+    data.activities.unshift({ id: uid('activity'), title, detail, icon: icon || '↻', time: new Date().toISOString() });
+    data.activities = data.activities.slice(0, 12);
+  }
+  function toast(title, message, type) {
+    const host = document.getElementById('toast-stack');
+    const el = document.createElement('div');
+    el.className = 'toast ' + (type || 'success');
+    el.innerHTML = `<span class="toast-symbol">${type === 'error' ? '⚠' : '✓'}</span><div><strong>${esc(title)}</strong><span>${esc(message || '')}</span></div>`;
+    host.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(-4px)'; setTimeout(() => el.remove(), 220); }, 3800);
+  }
+  function setPage(page) {
+    if (!PAGE_META[page]) return;
+    state.page = page;
+    document.querySelectorAll('.page').forEach(el => el.classList.toggle('active', el.id === `page-${page}`));
+    document.querySelectorAll('[data-action="navigate"]').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+    document.getElementById('header-eyebrow').textContent = PAGE_META[page][0];
+    document.getElementById('header-title').textContent = PAGE_META[page][1];
+    renderPage();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function renderPage() {
+    if (state.page === 'dashboard') renderDashboard();
+    if (state.page === 'manage') renderManage();
+    if (state.page === 'find') renderFind();
+  }
+  function totalSpaces() { return data.areas.reduce((sum, a) => sum + Number(a.rows || 0) * Number(a.cols || 0), 0); }
+  function areaOccupancy(area) {
+    const used = assignmentsForArea(area.id).length;
+    const total = Number(area.rows) * Number(area.cols);
+    return { used, total, available: Math.max(0, total - used), percent: total ? Math.min(100, Math.round(used / total * 100)) : 0 };
+  }
+  function recentDate(iso) {
+    try { return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(iso)); }
+    catch (_) { return ''; }
+  }
+  function renderDashboard() {
+    const total = totalSpaces();
+    const occupied = data.assignments.length;
+    const available = Math.max(0, total - occupied);
+    const host = document.getElementById('page-dashboard');
+    const areasContent = data.areas.length ? `<div class="area-list">${data.areas.map(area => {
+      const o = areaOccupancy(area);
+      return `<div class="area-row-card">
+        <div class="area-identity"><div class="area-symbol">▤</div><div class="area-info"><div class="area-title">${esc(area.name)}</div><div class="area-subtitle">${area.rows} rows · ${area.cols} spaces per row · ${o.total} total spaces</div></div></div>
+        <div class="area-status"><div class="occupancy-text">${o.used} / ${o.total}</div><div class="progress"><span style="width:${o.percent}%"></span></div><button class="btn btn-quiet btn-small" data-action="open-area" data-id="${esc(area.id)}">Open →</button></div>
+      </div>`;
+    }).join('')}</div>` : `<div class="empty-state"><div class="empty-illustration">▤</div><h4>No parking areas yet</h4><p>Create your first parking area, choose its rows and columns, then start assigning vehicles.</p><button class="btn btn-primary" data-action="add-area">＋ Create parking area</button></div>`;
+    const activityContent = data.activities.length ? `<div class="activity-list">${data.activities.slice(0, 5).map(act => `<div class="activity-item"><div class="activity-bullet">${esc(act.icon || '↻')}</div><div class="activity-main"><strong>${esc(act.title)}</strong><p>${esc(act.detail)}</p></div><div class="activity-time">${esc(recentDate(act.time))}</div></div>`).join('')}</div>` : `<div class="muted tiny">Your recent parking activity will appear here.</div>`;
+    host.innerHTML = `
+      <div class="welcome-row"><div><h2>Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}.</h2><p>Here’s what’s happening across your parking areas.</p></div><div class="actions"><button class="btn btn-secondary" data-action="navigate" data-page="find">⌕ Find a car</button><button class="btn btn-primary" data-action="add-area">＋ Add parking area</button></div></div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-top"><span>Parking areas</span><span class="metric-icon">▤</span></div><div class="metric-value">${data.areas.length}</div><div class="metric-foot">Configured locations</div></div>
+        <div class="metric"><div class="metric-top"><span>Total spaces</span><span class="metric-icon">▦</span></div><div class="metric-value">${total}</div><div class="metric-foot">Across all parking areas</div></div>
+        <div class="metric"><div class="metric-top"><span>Occupied</span><span class="metric-icon" style="background:#eaf1ff;color:#275fc0">🚘</span></div><div class="metric-value">${occupied}</div><div class="metric-foot"><span class="green">${total ? Math.round(occupied / total * 100) : 0}%</span> of total capacity</div></div>
+        <div class="metric"><div class="metric-top"><span>Available</span><span class="metric-icon" style="background:#e8f7ef;color:#17845d">✓</span></div><div class="metric-value">${available}</div><div class="metric-foot">Spaces ready to use</div></div>
+      </div>
+      <div class="dashboard-grid">
+        <section class="panel"><div class="panel-head"><div><h3>Parking areas</h3><p>Manage each location and check space availability.</p></div><button class="btn btn-secondary btn-small" data-action="add-area">＋ Add area</button></div><div class="panel-body">${areasContent}</div></section>
+        <div class="quick-card"><div class="quick-icon">⌕</div><h3>Find a vehicle fast</h3><p>Search by the full registration number or just a few characters. ParkPilot finds every match.</p><button class="btn btn-primary" data-action="navigate" data-page="find">Search vehicles <span aria-hidden="true">→</span></button><div style="height:10px"></div><button class="btn btn-secondary" data-action="navigate" data-page="manage">Manage parking spaces</button></div>
+      </div>
+      <section class="panel activity-panel"><div class="panel-head"><div><h3>Recent activity</h3><p>Latest assignments and parking changes.</p></div><div class="actions"><button class="btn btn-secondary btn-small" data-action="export-json">↧ Backup</button><button class="btn btn-secondary btn-small" data-action="export-csv">Export CSV</button><button class="btn btn-quiet btn-small" data-action="import-json">Import backup</button></div></div><div class="panel-body">${activityContent}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="btn btn-quiet btn-small" data-action="load-demo">Load sample data</button><span class="tiny muted" style="align-self:center">Sample data is only added when you choose it.</span></div></div></section>`;
+  }
+  function rowOptions(area) {
+    let html = '';
+    for (let i = 1; i <= Number(area.rows); i++) html += `<option value="${i}" ${i === Number(state.selectedRow) ? 'selected' : ''}>Row ${i}</option>`;
+    return html;
+  }
+  function renderManage() {
+    const host = document.getElementById('page-manage');
+    if (!data.areas.length) {
+      host.innerHTML = `<div class="section-title-row"><div><h2>Manage parking</h2><p>Choose a parking area, then work one row at a time.</p></div><button class="btn btn-primary" data-action="add-area">＋ Add area</button></div><section class="panel"><div class="empty-state"><div class="empty-illustration">▤</div><h4>Start by creating a parking area</h4><p>Set the number of rows and columns. You’ll be able to assign vehicles to individual spaces and find them later.</p><button class="btn btn-primary" data-action="add-area">Create parking area</button></div></section>`;
+      return;
+    }
+    if (!getArea(state.selectedAreaId)) state.selectedAreaId = data.areas[0].id;
+    const area = selectedArea();
+    state.selectedRow = Math.min(Math.max(1, Number(state.selectedRow) || 1), Number(area.rows));
+    const occ = areaOccupancy(area);
+    const activeAssigns = assignmentsForArea(area.id);
+    const spaces = Array.from({ length: Number(area.cols) }, (_, i) => {
+      const col = numberToLetters(i + 1);
+      const assignment = assignmentAt(area.id, state.selectedRow, col);
+      const spotId = `Row-${state.selectedRow}, ${col}`;
+      const isTarget = !!(state.highlight && state.highlight.areaId === area.id && Number(state.highlight.row) === Number(state.selectedRow) && state.highlight.col === col);
+      return `<button class="space-card ${assignment ? 'occupied' : ''} ${isTarget ? 'target' : ''}" data-action="open-space" data-col="${col}" aria-label="${spotId}, ${assignment ? 'occupied by ' + esc(assignment.plate) : 'available'}${isTarget ? ', selected search result' : ''}">
+        <span class="space-top"><span class="space-code">${spotId}</span><span class="space-state-dot"></span></span>
+        ${assignment ? `<span class="space-plate">${esc(assignment.plate)}</span><span class="space-caption">Vehicle assigned</span><span class="space-action">View assignment <span>↗</span></span>` : `<span class="space-plate" style="font-weight:600">Available</span><span class="space-caption">Ready to use</span><span class="space-action">＋ Add vehicle</span>`}
+      </button>`;
+    }).join('');
+    const locationBanner = state.highlight && state.highlight.areaId === area.id && Number(state.highlight.row) === Number(state.selectedRow) ? (() => {
+      const assignment = assignmentAt(state.highlight.areaId, state.highlight.row, state.highlight.col);
+      if (!assignment) return '';
+      return `<div class="location-banner"><div class="pin">📍</div><div class="location-banner-content"><strong>Vehicle location highlighted · ${esc(assignment.plate)}</strong><p>${esc(directionsFor(assignment))}</p></div><button class="icon-btn" data-action="clear-highlight" aria-label="Clear highlighted location">×</button></div>`;
+    })() : '';
+    host.innerHTML = `
+      <div class="section-title-row"><div><h2>Manage parking</h2><p>Select an area and manage one row at a time.</p></div><button class="btn btn-primary" data-action="add-area">＋ Add area</button></div>
+      <div class="area-select-panel"><label for="area-picker">Parking area</label><select class="select-control" id="area-picker" data-change="select-area">${data.areas.map(a => `<option value="${esc(a.id)}" ${a.id === area.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select><span class="spacer"></span><span class="badge badge-available">${occ.available} available</span><span class="badge badge-occupied">${occ.used} occupied</span><button class="btn btn-secondary btn-small" data-action="edit-area" data-id="${esc(area.id)}">✎ Edit area</button></div>
+      ${locationBanner}
+      <section class="panel"><div class="layout-panel"><div class="layout-top"><div><h3>${esc(area.name)}</h3><p>${area.rows} rows · ${area.cols} spaces per row · ${occ.total} total spaces${area.description ? ' · ' + esc(area.description) : ''}</p></div><div class="badge badge-available">${occ.percent}% occupied</div></div>
+      <div class="row-tools"><span class="row-name">Row ${state.selectedRow} <span class="muted" style="font-weight:500">of ${area.rows}</span></span><label for="row-picker">Jump to row</label><select class="select-control" id="row-picker" data-change="select-row">${rowOptions(area)}</select><button class="btn btn-secondary btn-small" data-action="prev-row" ${state.selectedRow <= 1 ? 'disabled' : ''}>← Previous</button><button class="btn btn-secondary btn-small" data-action="next-row" ${state.selectedRow >= area.rows ? 'disabled' : ''}>Next →</button></div>
+      <div class="spaces-head"><h4>Spaces in Row ${state.selectedRow}</h4><span>${activeAssigns.filter(a => Number(a.row) === Number(state.selectedRow)).length} occupied of ${area.cols}</span></div>
+      <div class="spaces-scroll" tabindex="0" aria-label="Scrollable spaces for row ${state.selectedRow}"><div class="spaces-grid">${spaces}</div></div>
+      <div class="tiny muted" style="margin-top:8px">Tip: swipe sideways to see more spaces. Select any space to add, edit, or remove a vehicle.</div>
+      </div></section>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn btn-secondary" data-action="export-csv">↧ Export vehicle list</button><button class="btn btn-quiet" data-action="delete-area" data-id="${esc(area.id)}">Delete parking area</button></div>`;
+  }
+  function getSearchMatches(query) {
+    const raw = String(query || '').trim().toLowerCase();
+    const plateNeedle = normalizePlate(query);
+    if (!raw) return [];
+    return data.assignments.filter(a => normalizePlate(a.plate).includes(plateNeedle) || String(a.makeModel || '').toLowerCase().includes(raw) || String(a.carName || '').toLowerCase().includes(raw)).sort((a,b) => a.plate.localeCompare(b.plate));
+  }
+  function resultCard(a) {
+    return `<article class="result-card"><div class="result-top"><div style="display:flex;gap:11px;min-width:0"><div class="plate-icon">🚘</div><div style="min-width:0"><div class="result-plate">${esc(a.plate)}</div><div class="result-location">${esc((getArea(a.areaId) || {}).name || 'Unknown parking area')}${carDescription(a) ? `<br><span class="muted">${esc(carDescription(a))}</span>` : ''}</div></div></div><span class="badge badge-occupied">Occupied</span></div>
+      <div class="result-details"><div><div class="result-detail-label">Row</div><div class="result-detail-value">${a.row}</div></div><div><div class="result-detail-label">Column</div><div class="result-detail-value">${esc(a.col)}</div></div><div><div class="result-detail-label">Space</div><div class="result-detail-value">${esc(spaceId(a))}</div></div></div>
+      <div class="tiny muted" style="margin-bottom:12px">${esc(locationText(a))}${carDescription(a) ? ` · ${esc(carDescription(a))}` : ''}</div>
+      <div class="result-actions"><button class="btn btn-primary btn-small" data-action="show-location" data-id="${esc(a.id)}">⌖ Show location</button><button class="btn btn-secondary btn-small" data-action="copy-directions" data-id="${esc(a.id)}">▢ Copy directions</button></div></article>`;
+  }
+  function renderFindResults() {
+    const host = document.getElementById('find-results');
+    if (!host) return;
+    const query = state.searchQuery;
+    if (!String(query || '').trim()) {
+      host.innerHTML = `<div class="search-empty"><div class="empty-illustration">⌕</div><strong>Search for a vehicle</strong><p>Search by registration number, customer / vehicle name, or car make and model.</p></div>`;
+      return;
+    }
+    const matches = getSearchMatches(query);
+    host.innerHTML = matches.length ? `<div class="results-header"><h3>Matching vehicles</h3><span class="results-count">${matches.length} result${matches.length === 1 ? '' : 's'} for “${esc(query)}”</span></div><div class="results-grid">${matches.map(resultCard).join('')}</div>` : `<div class="search-empty"><div class="empty-illustration">⌕</div><strong>No matching vehicles found</strong><p>Try fewer characters, check the registration number, or make sure the vehicle has been assigned a parking space.</p></div>`;
+  }
+  function renderFind() {
+    const host = document.getElementById('page-find');
+    host.innerHTML = `<div class="search-hero"><h2>Find a parked vehicle</h2><p>Search by registration number, customer / vehicle name, or car make and model.</p><form class="search-form" id="search-form"><div class="search-input-wrap"><span class="search-symbol">⌕</span><label class="visually-hidden" for="plate-search">Vehicle registration number</label><input class="search-input" id="plate-search" name="query" type="search" autocomplete="off" placeholder="Search plate, name, or make/model…" value="${esc(state.searchQuery)}" /></div><button class="btn btn-primary" type="submit">Search vehicles →</button></form><div class="search-hint">Try an example: <button type="button" class="btn btn-quiet btn-small" style="color:#fff;padding:1px 5px;min-height:22px" data-action="search-example" data-query="2282">2282</button> <button type="button" class="btn btn-quiet btn-small" style="color:#fff;padding:1px 5px;min-height:22px" data-action="search-example" data-query="RJ14">RJ14</button></div></div>
+      <div id="find-results" aria-live="polite"></div>`;
+    renderFindResults();
+    const input = document.getElementById('plate-search');
+    if (input) input.addEventListener('input', () => { state.searchQuery = input.value; renderFindResults(); });
+  }
+  function openAreaModal(area) {
+    state.modal = { type: 'area', areaId: area ? area.id : null };
+    renderModal();
+  }
+  function openAssignmentModal(col) {
+    const area = selectedArea();
+    if (!area) return;
+    const assignment = assignmentAt(area.id, state.selectedRow, col);
+    state.modal = { type: 'assignment', areaId: area.id, row: state.selectedRow, col, assignmentId: assignment ? assignment.id : null };
+    renderModal();
+  }
+  function closeModal() { state.modal = null; renderModal(); }
+  function renderModal() {
+    const root = document.getElementById('modal-root');
+    if (!state.modal) { root.innerHTML = ''; return; }
+    if (state.modal.type === 'area') {
+      const area = state.modal.areaId ? getArea(state.modal.areaId) : null;
+      root.innerHTML = `<div class="modal-backdrop" data-action="backdrop-close"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="area-modal-title"><form id="area-form"><div class="modal-head"><div><h3 id="area-modal-title">${area ? 'Edit parking area' : 'Create parking area'}</h3><p>${area ? 'Update area details without losing current assignments.' : 'Set up a location and its row-and-column layout.'}</p></div><button type="button" class="icon-btn" data-action="close-modal" aria-label="Close dialog">×</button></div><div class="modal-body"><div class="form-grid">
+        <div class="field full"><label for="area-name">Parking area name *</label><input id="area-name" name="name" required maxlength="80" placeholder="e.g. Main Parking, Basement 1, 11A" value="${esc(area ? area.name : '')}" /></div>
+        <div class="field"><label for="area-rows">Number of rows *</label><input id="area-rows" name="rows" type="number" min="1" max="100" required value="${area ? area.rows : 5}" /><span class="field-help">1 to 100 rows. Only one row is shown at a time.</span></div>
+        <div class="field"><label for="area-cols">Spaces per row *</label><input id="area-cols" name="cols" type="number" min="1" max="100" required value="${area ? area.cols : 6}" /><span class="field-help">Columns are labelled A, B, C … Z, AA, AB…</span></div>
+        <div class="field full"><label for="area-description">Description <span class="optional">(optional)</span></label><input id="area-description" name="description" maxlength="150" placeholder="e.g. Visitor parking near reception" value="${esc(area ? area.description || '' : '')}" /></div>
+        <div class="field full"><label for="area-instructions">Directions / entry instructions <span class="optional">(optional)</span></label><textarea id="area-instructions" name="instructions" maxlength="500" placeholder="e.g. Enter through Gate A. Turn left after the entrance.">${esc(area ? area.instructions || '' : '')}</textarea><span class="field-help">These instructions can be copied and shared with customers.</span></div>
+        ${area ? `<div class="field full"><span class="field-help">Current assignments: ${assignmentsForArea(area.id).length}. If reducing rows or columns would remove an occupied space, move those vehicles first.</span></div>` : ''}
+        </div></div><div class="modal-foot"><button type="button" class="btn btn-quiet" data-action="close-modal">Cancel</button><div class="modal-foot-right"><button class="btn btn-primary" type="submit">${area ? 'Save changes' : 'Create area'}</button></div></div></form></section></div>`;
+    } else if (state.modal.type === 'assignment') {
+      const m = state.modal;
+      const area = getArea(m.areaId);
+      const existing = m.assignmentId ? data.assignments.find(a => a.id === m.assignmentId) : null;
+      const spotId = `Row-${m.row}, ${m.col}`;
+      root.innerHTML = `<div class="modal-backdrop" data-action="backdrop-close"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="assignment-modal-title"><form id="assignment-form"><div class="modal-head"><div><h3 id="assignment-modal-title">${existing ? 'Vehicle assignment' : 'Assign a vehicle'}</h3><p>${existing ? 'Edit this vehicle or mark the space available.' : 'Enter the registration number for this space.'}</p></div><button type="button" class="icon-btn" data-action="close-modal" aria-label="Close dialog">×</button></div><div class="modal-body"><div class="assignment-context"><div class="assignment-context-icon">▤</div><div><strong>${esc(area ? area.name : 'Parking area')}</strong><span>Row ${m.row} · Column ${esc(m.col)} · Space ${esc(spotId)}</span></div></div><div class="field"><label for="vehicle-plate">Vehicle registration number *</label><input id="vehicle-plate" name="plate" required maxlength="24" autocomplete="off" autocapitalize="characters" placeholder="e.g. RJ14AB2282" value="${esc(existing ? existing.plate : '')}" /><span class="field-help">Letters, numbers, spaces, and hyphens are accepted. Search ignores spaces and hyphens.</span></div><div class="field" style="margin-top:14px"><label for="vehicle-make-model">Car make and model</label><input id="vehicle-make-model" name="makeModel" list="vehicle-model-options" autocomplete="off" placeholder="Start typing: Hyundai Creta, Swift, Toyota..." value="${esc(existing ? existing.makeModel || '' : '')}" /><datalist id="vehicle-model-options">${modelOptions(existing ? existing.makeModel || '' : '')}</datalist><span class="field-help">Type to see popular makes and models, or enter any custom make/model.</span></div><div class="field" style="margin-top:14px"><label for="vehicle-name">Customer / vehicle name <span class="optional">(optional)</span></label><input id="vehicle-name" name="carName" maxlength="80" autocomplete="off" placeholder="e.g. Mr Sharma, white SUV" value="${esc(existing ? existing.carName || '' : '')}" /></div>${existing ? `<div class="field" style="margin-top:14px"><span class="field-help">Assigned ${esc(recentDate(existing.assignedAt))}</span></div>` : ''}</div><div class="modal-foot">${existing ? `<button type="button" class="btn btn-danger" data-action="remove-assignment" data-id="${esc(existing.id)}">Remove vehicle</button>` : `<button type="button" class="btn btn-quiet" data-action="close-modal">Cancel</button>`}<div class="modal-foot-right">${existing ? `<button type="button" class="btn btn-secondary" data-action="close-modal">Cancel</button>` : ''}<button type="submit" class="btn btn-primary">${existing ? 'Save changes' : 'Save vehicle'}</button></div></div></form></section></div>`;
+    }
+    const firstInput = root.querySelector('input:not([type="file"]), textarea');
+    if (firstInput) setTimeout(() => firstInput.focus(), 30);
+  }
+  function showArea(id) {
+    state.selectedAreaId = id;
+    state.selectedRow = 1;
+    state.highlight = null;
+    setPage('manage');
+  }
+  function assignVehicle(form) {
+    const m = state.modal;
+    const area = getArea(m.areaId);
+    if (!area) { closeModal(); return; }
+    const plate = String(form.get('plate') || '').trim().toUpperCase().replace(/\s+/g, ' ');
+    if (!plate || !normalizePlate(plate)) { toast('Registration required', 'Enter a valid vehicle registration number.', 'error'); return; }
+    const current = m.assignmentId ? data.assignments.find(a => a.id === m.assignmentId) : null;
+    const target = assignmentAt(m.areaId, m.row, m.col);
+    if (target && current && target.id === current.id && normalizePlate(target.plate) === normalizePlate(plate)) {
+      current.plate = plate; current.makeModel = String(form.get('makeModel') || '').trim(); current.carName = String(form.get('carName') || '').trim(); current.assignedAt = new Date().toISOString();
+      logActivity('Vehicle details updated', `${plate} · ${locationText(current)}`, '✎');
+      persist(); closeModal(); renderPage(); toast('Assignment updated', `${plate} is still in Row-${current.row}, ${current.col}.`); return;
+    }
+    const duplicate = data.assignments.find(a => normalizePlate(a.plate) === normalizePlate(plate) && (!current || a.id !== current.id) && (!target || a.id !== target.id));
+    let moveFrom = null;
+    if (duplicate) {
+      const answer = confirm(`${plate} is already assigned to ${locationText(duplicate)}.\n\nMove this vehicle to ${area.name}, Row-${m.row}, Column ${m.col}?`);
+      if (!answer) return;
+      moveFrom = duplicate;
+    }
+    if (target && (!current || target.id !== current.id)) {
+      const answer = confirm(`Space Row-${m.row}, ${m.col} is currently assigned to ${target.plate}.\n\nReplace that assignment with ${plate}?`);
+      if (!answer) return;
+    }
+    if (moveFrom) data.assignments = data.assignments.filter(a => a.id !== moveFrom.id);
+    if (target) data.assignments = data.assignments.filter(a => a.id !== target.id);
+    if (current) data.assignments = data.assignments.filter(a => a.id !== current.id);
+    const assignment = { id: uid('assignment'), areaId: m.areaId, row: Number(m.row), col: m.col, plate, makeModel: String(form.get('makeModel') || '').trim(), carName: String(form.get('carName') || '').trim(), assignedAt: new Date().toISOString(), status: 'occupied' };
+    data.assignments.push(assignment);
+    logActivity(moveFrom ? 'Vehicle moved' : current ? 'Vehicle assignment updated' : 'Vehicle parked', `${plate} · ${locationText(assignment)}`, moveFrom ? '⇄' : '🚘');
+    persist(); closeModal(); renderPage();
+    toast(moveFrom ? 'Vehicle moved' : 'Vehicle assigned', `${plate} · Row-${m.row}, ${m.col} · ${area.name}`);
+  }
+  function removeAssignment(id) {
+    const assignment = data.assignments.find(a => a.id === id);
+    if (!assignment) return;
+    if (!confirm(`Remove ${assignment.plate} from ${locationText(assignment)}? This marks the space as available.`)) return;
+    data.assignments = data.assignments.filter(a => a.id !== id);
+    logActivity('Vehicle exited', `${assignment.plate} removed from ${locationText(assignment)}`, '✓');
+    if (state.highlight && state.highlight.assignmentId === id) state.highlight = null;
+    persist(); closeModal(); renderPage(); toast('Space is now available', `${assignment.plate} has been removed.`);
+  }
+  function saveArea(form) {
+    const m = state.modal;
+    const name = String(form.get('name') || '').trim();
+    const rows = Number(form.get('rows'));
+    const cols = Number(form.get('cols'));
+    const description = String(form.get('description') || '').trim();
+    const instructions = String(form.get('instructions') || '').trim();
+    if (!name || !Number.isInteger(rows) || !Number.isInteger(cols) || rows < 1 || cols < 1 || rows > 100 || cols > 100) {
+      toast('Check the area details', 'Use a name and enter between 1 and 100 for rows and spaces per row.', 'error'); return;
+    }
+    const duplicateName = data.areas.find(a => a.id !== m.areaId && a.name.trim().toLowerCase() === name.toLowerCase());
+    if (duplicateName && !confirm(`An area named “${name}” already exists. Create another area with the same name?`)) return;
+    if (m.areaId) {
+      const area = getArea(m.areaId);
+      if (!area) { closeModal(); return; }
+      const outside = assignmentsForArea(area.id).filter(a => Number(a.row) > rows || lettersToNumber(a.col) > cols);
+      if (outside.length) {
+        const examples = outside.slice(0, 4).map(a => `${a.plate} (${a.col}${a.row})`).join(', ');
+        toast('Layout change blocked', `${outside.length} occupied space(s) would be removed. Move those vehicles first: ${examples}${outside.length > 4 ? '…' : ''}`, 'error');
+        return;
+      }
+      area.name = name; area.rows = rows; area.cols = cols; area.description = description; area.instructions = instructions; area.updatedAt = new Date().toISOString();
+      logActivity('Parking area updated', `${name} · ${rows} rows × ${cols} spaces`, '✎');
+      state.selectedAreaId = area.id; state.selectedRow = Math.min(state.selectedRow, rows);
+      persist(); closeModal(); renderPage(); toast('Parking area updated', `${name} has been saved.`);
+    } else {
+      const area = { id: uid('area'), name, rows, cols, description, instructions, createdAt: new Date().toISOString() };
+      data.areas.push(area); state.selectedAreaId = area.id; state.selectedRow = 1; state.highlight = null;
+      logActivity('Parking area created', `${name} · ${rows} rows × ${cols} spaces`, '＋');
+      persist(); closeModal(); setPage('manage'); toast('Parking area created', `${name} is ready for vehicle assignments.`);
+    }
+  }
+  function deleteArea(id) {
+    const area = getArea(id);
+    if (!area) return;
+    const assigns = assignmentsForArea(id);
+    const message = assigns.length ? `“${area.name}” contains ${assigns.length} vehicle assignment(s). Deleting it will remove those assignments too. Continue?` : `Delete parking area “${area.name}”?`;
+    if (!confirm(message)) return;
+    data.areas = data.areas.filter(a => a.id !== id);
+    data.assignments = data.assignments.filter(a => a.areaId !== id);
+    logActivity('Parking area deleted', `${area.name}${assigns.length ? ` · ${assigns.length} assignments removed` : ''}`, '×');
+    if (state.selectedAreaId === id) state.selectedAreaId = data.areas.length ? data.areas[0].id : null;
+    state.highlight = null; state.selectedRow = 1;
+    persist(); renderPage(); toast('Parking area deleted', `${area.name} was removed.`);
+  }
+  function showLocation(id) {
+    const a = data.assignments.find(x => x.id === id);
+    if (!a) { toast('Vehicle not found', 'This assignment may have been removed.', 'error'); return; }
+    state.selectedAreaId = a.areaId; state.selectedRow = Number(a.row); state.highlight = { areaId: a.areaId, row: Number(a.row), col: a.col, assignmentId: a.id };
+    setPage('manage');
+    toast('Location highlighted', `${a.plate} is in ${a.col}${a.row}, Row ${a.row}.`);
+  }
+  async function copyText(textToCopy) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(textToCopy);
+      else {
+        const ta = document.createElement('textarea'); ta.value = textToCopy; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+        const ok = document.execCommand('copy'); ta.remove(); if (!ok) throw new Error('copy failed');
+      }
+      toast('Directions copied', 'Ready to paste into a message for the customer.');
+    } catch (e) {
+      window.prompt('Copy these directions:', textToCopy);
+    }
+  }
+  function exportJson() {
+    const payload = { app: 'ParkPilot', formatVersion: 1, exportedAt: new Date().toISOString(), ...data };
+    downloadFile(JSON.stringify(payload, null, 2), `parkpilot-backup-${new Date().toISOString().slice(0,10)}.json`, 'application/json');
+    toast('Backup exported', 'Keep this JSON file somewhere safe.');
+  }
+  function csvCell(value) { const s = String(value == null ? '' : value); return '"' + s.replace(/"/g, '""') + '"'; }
+  function exportCsv() {
+    const rows = [['Vehicle registration', 'Make and model', 'Customer / vehicle name', 'Parking area', 'Row', 'Column', 'Space ID', 'Assigned at', 'Status']];
+    data.assignments.forEach(a => rows.push([a.plate, a.makeModel || '', a.carName || '', (getArea(a.areaId) || {}).name || 'Unknown area', a.row, a.col, spaceId(a), a.assignedAt, a.status || 'occupied']));
+    const csv = '\uFEFF' + rows.map(row => row.map(csvCell).join(',')).join('\r\n');
+    downloadFile(csv, `parkpilot-vehicles-${new Date().toISOString().slice(0,10)}.csv`, 'text/csv;charset=utf-8');
+    toast('Vehicle list exported', `${data.assignments.length} assignment(s) included.`);
+  }
+  function downloadFile(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  function importJsonFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result || ''));
+        if (!parsed || !Array.isArray(parsed.areas) || !Array.isArray(parsed.assignments)) throw new Error('missing arrays');
+        const validAreas = parsed.areas.every(a => a && a.id && typeof a.name === 'string' && Number.isInteger(Number(a.rows)) && Number(a.rows) > 0 && Number.isInteger(Number(a.cols)) && Number(a.cols) > 0);
+        const areaIds = new Set(parsed.areas.map(a => a.id));
+        const validAssignments = parsed.assignments.every(a => a && a.id && areaIds.has(a.areaId) && a.plate && Number(a.row) > 0 && a.col && Number.isInteger(lettersToNumber(a.col)));
+        if (!validAreas || !validAssignments) throw new Error('invalid data');
+        const seenSpaces = new Set(); const seenPlates = new Set();
+        for (const a of parsed.assignments) {
+          const area = parsed.areas.find(x => x.id === a.areaId);
+          if (a.row > area.rows || lettersToNumber(a.col) > area.cols) throw new Error('assignment outside layout');
+          const spaceKey = `${a.areaId}|${a.row}|${a.col}`; const plateKey = normalizePlate(a.plate);
+          if (seenSpaces.has(spaceKey) || seenPlates.has(plateKey)) throw new Error('duplicate assignment');
+          seenSpaces.add(spaceKey); seenPlates.add(plateKey);
+        }
+        if (!confirm(`Import ${parsed.areas.length} area(s) and ${parsed.assignments.length} vehicle assignment(s)? This will replace the data currently stored in this browser.`)) return;
+        data = { areas: parsed.areas, assignments: parsed.assignments, activities: Array.isArray(parsed.activities) ? parsed.activities : [] };
+        state.selectedAreaId = data.areas.length ? data.areas[0].id : null; state.selectedRow = 1; state.highlight = null; state.searchQuery = '';
+        logActivity('Backup restored', `${data.areas.length} parking area(s) · ${data.assignments.length} vehicle assignment(s)`, '↧'); persist(); setPage('dashboard'); toast('Backup restored', 'Your ParkPilot data has been imported.');
+      } catch (e) { toast('Could not import backup', 'Choose a valid ParkPilot JSON backup. The current data has not been changed.', 'error'); }
+    };
+    reader.onerror = () => toast('File could not be read', 'Try choosing the backup file again.', 'error');
+    reader.readAsText(file);
+  }
+  function loadDemo() {
+    if (data.areas.length || data.assignments.length) {
+      if (!confirm('Add sample data to your existing parking areas? It will add two sample areas and vehicles.')) return;
+    }
+    const main = { id: uid('area'), name: 'Main Parking', rows: 5, cols: 6, description: 'Ground floor · Visitor and staff parking', instructions: 'Enter through Gate A. Turn left after the entrance and follow the blue zone markings.', createdAt: new Date().toISOString() };
+    const basement = { id: uid('area'), name: 'Basement 1', rows: 3, cols: 4, description: 'Underground parking', instructions: 'Use the basement ramp and follow the B1 signs.', createdAt: new Date().toISOString() };
+    data.areas.push(main, basement);
+    const sample = [
+      [main,1,'C','RJ14AB2282'], [main,1,'E','DL8CAF9012'], [main,2,'A','HR26DK4410'], [main,3,'D','UP16BT7021'], [main,4,'B','RJ45MN1808'], [basement,1,'B','DL3CCK8890'], [basement,2,'D','UP14QX6281']
+    ];
+    const sampleModels = ['Maruti Suzuki Swift','Hyundai Creta','Tata Nexon','Mahindra Scorpio-N','Toyota Innova Crysta','Honda City','Kia Seltos'];
+    sample.forEach(([area,row,col,plate], i) => data.assignments.push({ id: uid('assignment'), areaId: area.id, row, col, plate, makeModel: sampleModels[i], carName: '', assignedAt: new Date().toISOString(), status: 'occupied' }));
+    logActivity('Sample data loaded', 'Added Main Parking, Basement 1, and example vehicles.', '＋');
+    state.selectedAreaId = main.id; state.selectedRow = 1; state.searchQuery = ''; persist(); renderPage(); toast('Sample data added', 'Try searching for 2282 or RJ14.');
+  }
+
+  document.addEventListener('click', async function (event) {
+    const el = event.target.closest('[data-action]');
+    if (!el) return;
+    const action = el.dataset.action;
+    if (action === 'backdrop-close') { if (event.target === el) closeModal(); return; }
+    if (action === 'navigate') { setPage(el.dataset.page); return; }
+    if (action === 'add-area') { openAreaModal(null); return; }
+    if (action === 'edit-area') { openAreaModal(getArea(el.dataset.id)); return; }
+    if (action === 'delete-area') { deleteArea(el.dataset.id); return; }
+    if (action === 'open-area') { showArea(el.dataset.id); return; }
+    if (action === 'open-space') { openAssignmentModal(el.dataset.col); return; }
+    if (action === 'close-modal') { closeModal(); return; }
+    if (action === 'remove-assignment') { removeAssignment(el.dataset.id); return; }
+    if (action === 'show-location') { showLocation(el.dataset.id); return; }
+    if (action === 'copy-directions') { const a = data.assignments.find(x => x.id === el.dataset.id); if (a) await copyText(directionsFor(a)); return; }
+    if (action === 'clear-highlight') { state.highlight = null; renderManage(); return; }
+    if (action === 'prev-row') { const a = selectedArea(); if (a && state.selectedRow > 1) { state.selectedRow--; state.highlight = null; renderManage(); } return; }
+    if (action === 'next-row') { const a = selectedArea(); if (a && state.selectedRow < a.rows) { state.selectedRow++; state.highlight = null; renderManage(); } return; }
+    if (action === 'export-json') { exportJson(); return; }
+    if (action === 'export-csv') { exportCsv(); return; }
+    if (action === 'import-json') { document.getElementById('import-file').click(); return; }
+    if (action === 'load-demo') { loadDemo(); return; }
+    if (action === 'search-example') { state.searchQuery = el.dataset.query || ''; setPage('find'); const input = document.getElementById('plate-search'); if (input) input.focus(); return; }
+  });
+  document.addEventListener('change', function (event) {
+    const el = event.target;
+    if (el.dataset.change === 'select-area') { state.selectedAreaId = el.value; state.selectedRow = 1; state.highlight = null; renderManage(); }
+    if (el.dataset.change === 'select-row') { state.selectedRow = Number(el.value) || 1; state.highlight = null; renderManage(); }
+  });
+  document.addEventListener('submit', function (event) {
+    if (event.target.id === 'area-form') { event.preventDefault(); saveArea(new FormData(event.target)); }
+    if (event.target.id === 'assignment-form') { event.preventDefault(); assignVehicle(new FormData(event.target)); }
+    if (event.target.id === 'search-form') { event.preventDefault(); const input = document.getElementById('plate-search'); state.searchQuery = input ? input.value : ''; renderFindResults(); }
+  });
+  document.getElementById('import-file').addEventListener('change', function (event) {
+    const file = event.target.files && event.target.files[0]; importJsonFile(file); event.target.value = '';
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && state.modal) closeModal();
+  });
+
+  if (data.areas.length && !state.selectedAreaId) state.selectedAreaId = data.areas[0].id;
+  renderDashboard(); renderManage(); renderFind();
+})();
+</script>
+</body>
+</html>
